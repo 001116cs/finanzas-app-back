@@ -78,7 +78,7 @@ export class ListarTransaccionesQuery {
   @Matches(FECHA)
   hasta?: string;
   @ApiPropertyOptional({ type: String, enum: TIPOS_MOVIMIENTO })
-  @ValidateIf((o: EditarTransaccionDto) => o.tipo !== undefined)
+  @ValidateIf((o: ListarTransaccionesQuery) => o.tipo !== undefined)
   @IsIn(TIPOS_MOVIMIENTO)
   tipo?: TipoMovimiento;
   @ApiPropertyOptional({
@@ -104,7 +104,18 @@ export class ListarTransaccionesQuery {
   tamano: number = 50;
 }
 
+export const PERIODOS_RESUMEN = ['mes_anterior'] as const;
+
 export class ResumenQuery {
+  @ApiPropertyOptional({
+    type: String,
+    enum: PERIODOS_RESUMEN,
+    description:
+      'Período relativo resuelto en la zona del perfil; excluyente con desde/hasta',
+  })
+  @IsOptional()
+  @IsIn(PERIODOS_RESUMEN)
+  periodo?: (typeof PERIODOS_RESUMEN)[number];
   @ApiPropertyOptional({ type: String, example: '2026-11-01' })
   @IsOptional()
   @Matches(FECHA)

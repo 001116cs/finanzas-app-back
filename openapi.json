@@ -832,6 +832,18 @@
         "operationId": "ResumenController_get",
         "parameters": [
           {
+            "name": "periodo",
+            "required": false,
+            "in": "query",
+            "description": "Período relativo resuelto en la zona del perfil; excluyente con desde/hasta",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mes_anterior"
+              ]
+            }
+          },
+          {
             "name": "desde",
             "required": false,
             "in": "query",

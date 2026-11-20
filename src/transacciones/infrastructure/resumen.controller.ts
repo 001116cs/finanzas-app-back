@@ -36,7 +36,7 @@ export class ResumenController {
     @PerfilActual() perfil: Perfil,
     @Query() q: ResumenQuery,
   ) {
-    const r = await this.resumen.ejecutar(userId, perfil, q.desde, q.hasta);
+    const r = await this.resumen.ejecutar(userId, perfil, q.desde, q.hasta, q.periodo);
     return {
       desde: r.desde,
       hasta: r.hasta,

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ValidacionError } from '../../compartido/errores.js';
-import { rangoMesActual } from '../../compartido/fechas.js';
+import { rangoMesActual, rangoMesAnterior } from '../../compartido/fechas.js';
 import { Monto } from '../../compartido/monto.js';
 import { RELOJ, type Reloj } from '../../compartido/reloj.js';
 import type { TipoMovimiento } from '../../compartido/tipos.js';
@@ -38,7 +38,16 @@ export class ObtenerResumen {
     perfil: { moneda: string; zonaHoraria: string },
     desdeParam?: string,
     hastaParam?: string,
+    periodo?: 'mes_anterior',
   ): Promise<Resumen> {
+    if (
+      periodo !== undefined &&
+      (desdeParam !== undefined || hastaParam !== undefined)
+    )
+      throw new ValidacionError(
+        'periodo no se puede combinar con desde/hasta',
+        'RANGO_INVALIDO',
+      );
     if ((desdeParam === undefined) !== (hastaParam === undefined))
       throw new ValidacionError(
         'Indica desde y hasta juntos, o ninguno',
@@ -46,7 +55,12 @@ export class ObtenerResumen {
       );
     let desde: string;
     let hasta: string;
-    if (desdeParam !== undefined && hastaParam !== undefined) {
+    if (periodo === 'mes_anterior') {
+      ({ desde, hasta } = rangoMesAnterior(
+        this.reloj.ahora(),
+        perfil.zonaHoraria,
+      ));
+    } else if (desdeParam !== undefined && hastaParam !== undefined) {
       desde = validarFecha(desdeParam);
       hasta = validarFecha(hastaParam);
       if (desde > hasta)

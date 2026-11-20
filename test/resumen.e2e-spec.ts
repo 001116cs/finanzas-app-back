@@ -148,6 +148,40 @@ describe('resumen', () => {
     await http().get('/resumen?hasta=2026-11-01').set(authA).expect(400);
   });
 
+  it("periodo=mes_anterior usa la zona del perfil (Lima: hoy es 30-nov, anterior = octubre)", async () => {
+    await mov(authA, 'gasto', '1.00', '2026-09-30'); // fuera
+    await mov(authA, 'gasto', '2.00', '2026-10-01');
+    await mov(authA, 'gasto', '4.00', '2026-10-31');
+    await mov(authA, 'gasto', '8.00', '2026-11-01'); // fuera
+    const res = await http()
+      .get('/resumen?periodo=mes_anterior')
+      .set(authA)
+      .expect(200);
+    expect(res.body).toMatchObject({
+      desde: '2026-10-01',
+      hasta: '2026-10-31',
+      totalGastos: '6.00',
+    });
+    // En UTC ya es 1-dic: el mes anterior es noviembre.
+    const b = await http()
+      .get('/resumen?periodo=mes_anterior')
+      .set(authB)
+      .expect(200);
+    expect(b.body).toMatchObject({ desde: '2026-11-01', hasta: '2026-11-30' });
+  });
+
+  it('periodo combinado con desde/hasta -> 400 RANGO_INVALIDO', async () => {
+    const res = await http()
+      .get('/resumen?periodo=mes_anterior&desde=2026-11-01&hasta=2026-11-02')
+      .set(authA)
+      .expect(400);
+    expect(res.body.codigo).toBe('RANGO_INVALIDO');
+  });
+
+  it('periodo desconocido -> 400', async () => {
+    await http().get('/resumen?periodo=otro').set(authA).expect(400);
+  });
+
   it('fecha inválida -> 400', async () => {
     await http()
       .get('/resumen?desde=2026-13-01&hasta=2026-13-02')
