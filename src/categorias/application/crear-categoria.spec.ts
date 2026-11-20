@@ -38,6 +38,7 @@ class RepoMemoria implements CategoriaRepository {
   async contarMovimientos() {
     return 0;
   }
+  async eliminar() {}
   private dup(userId: string, tipo: string, nombre: string) {
     return this.filas.some(
       (c) =>

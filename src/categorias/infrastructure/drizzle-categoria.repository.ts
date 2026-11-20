@@ -1,11 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, eq } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { ConflictoError } from '../../compartido/errores.js';
+import {
+  ConflictoError,
+  NoEncontradoError,
+  ValidacionError,
+} from '../../compartido/errores.js';
 import type { TipoMovimiento } from '../../compartido/tipos.js';
 import { DB } from '../../db/db.module.js';
 import * as schema from '../../db/schema.js';
-import type { CategoriaRepository } from '../application/categoria.repository.js';
+import type {
+  CategoriaRepository,
+  ModoEliminacion,
+} from '../application/categoria.repository.js';
 import type { Categoria, CategoriaConConteo } from '../domain/categoria.js';
 
 const { categories, transactions } = schema;
@@ -42,7 +49,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
         ),
       )
       .groupBy(categories.id)
-      .orderBy(asc(categories.nombre), asc(categories.tipo));
+      .orderBy(sql`lower(${categories.nombre})`, categories.id);
   }
 
   async obtener(userId: string, id: string): Promise<Categoria | null> {
@@ -92,6 +99,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
           nombre: categories.nombre,
           tipo: categories.tipo,
         });
+      if (!fila) throw new NoEncontradoError('Categoría no encontrada');
       return fila;
     } catch (e) {
       if (esViolacionUnica(e)) throw new ConflictoError('CATEGORIA_DUPLICADA');
@@ -107,5 +115,63 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
         and(eq(transactions.categoryId, id), eq(transactions.userId, userId)),
       );
     return fila?.n ?? 0;
+  }
+
+  async eliminar(
+    userId: string,
+    id: string,
+    modo: ModoEliminacion | null,
+    destinoId?: string,
+  ): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      const [cat] = await tx
+        .select({ id: categories.id, tipo: categories.tipo })
+        .from(categories)
+        .where(and(eq(categories.id, id), eq(categories.userId, userId)));
+      if (!cat) throw new NoEncontradoError('Categoría no encontrada');
+
+      if (modo === 'mover') {
+        const invalido = () =>
+          new ValidacionError('Categoría destino inválida', 'DESTINO_INVALIDO');
+        if (!destinoId || destinoId === id) throw invalido();
+        const [destino] = await tx
+          .select({ tipo: categories.tipo })
+          .from(categories)
+          .where(
+            and(eq(categories.id, destinoId), eq(categories.userId, userId)),
+          );
+        if (!destino || destino.tipo !== cat.tipo) throw invalido();
+      }
+
+      const [{ n }] = await tx
+        .select({ n: count() })
+        .from(transactions)
+        .where(
+          and(eq(transactions.categoryId, id), eq(transactions.userId, userId)),
+        );
+      if (n > 0 && modo === null)
+        throw new ValidacionError(
+          'La categoría tiene movimientos; indica qué hacer con ellos',
+          'MODO_REQUERIDO',
+        );
+
+      const propios = and(
+        eq(transactions.categoryId, id),
+        eq(transactions.userId, userId),
+      );
+      if (modo === 'eliminar_movimientos')
+        await tx.delete(transactions).where(propios);
+      else if (modo === 'conservar_sin_categoria')
+        await tx.update(transactions).set({ categoryId: null }).where(propios);
+      else if (modo === 'mover')
+        await tx
+          .update(transactions)
+          .set({ categoryId: destinoId })
+          .where(propios);
+
+      await tx
+        .delete(categories)
+        .where(and(eq(categories.id, id), eq(categories.userId, userId)));
+    });
   }
 }

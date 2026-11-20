@@ -1,4 +1,8 @@
-import { IsIn, IsOptional, IsString } from 'class-validator';
+import {
+  MODOS_ELIMINACION,
+  type ModoEliminacion,
+} from '../application/categoria.repository.js';
+import { IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
 import {
   TIPOS_MOVIMIENTO,
   type TipoMovimiento,
@@ -15,4 +19,9 @@ export class RenombrarCategoriaDto {
 
 export class ListarCategoriasQuery {
   @IsOptional() @IsIn(TIPOS_MOVIMIENTO) tipo?: TipoMovimiento;
+}
+
+export class EliminarCategoriaQuery {
+  @IsOptional() @IsIn(MODOS_ELIMINACION) modo?: ModoEliminacion;
+  @IsOptional() @IsUUID() destinoId?: string;
 }

@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Delete,
+  HttpCode,
   Get,
   Inject,
   Param,
@@ -11,10 +13,12 @@ import {
 } from '@nestjs/common';
 import { UsuarioActual } from '../../compartido/auth/decoradores.js';
 import { CrearCategoria } from '../application/crear-categoria.js';
+import { EliminarCategoria } from '../application/eliminar-categoria.js';
 import { ListarCategorias } from '../application/listar-categorias.js';
 import { RenombrarCategoria } from '../application/renombrar-categoria.js';
 import {
   CrearCategoriaDto,
+  EliminarCategoriaQuery,
   ListarCategoriasQuery,
   RenombrarCategoriaDto,
 } from './dto.js';
@@ -25,6 +29,7 @@ export class CategoriasController {
     @Inject(CrearCategoria) private readonly crear: CrearCategoria,
     @Inject(ListarCategorias) private readonly listar: ListarCategorias,
     @Inject(RenombrarCategoria) private readonly renombrar: RenombrarCategoria,
+    @Inject(EliminarCategoria) private readonly eliminar: EliminarCategoria,
   ) {}
 
   @Get()
@@ -45,5 +50,15 @@ export class CategoriasController {
     @Body() dto: RenombrarCategoriaDto,
   ) {
     return this.renombrar.ejecutar(userId, id, dto.nombre);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  async delete(
+    @UsuarioActual() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() q: EliminarCategoriaQuery,
+  ): Promise<void> {
+    await this.eliminar.ejecutar(userId, id, q.modo, q.destinoId);
   }
 }
