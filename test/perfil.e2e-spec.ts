@@ -60,7 +60,15 @@ describe('perfil', () => {
     expect(g.body.moneda).toBe('PEN');
   });
 
-  it.todo('GET /categorias devuelve 10 elementos (se activa en la Task 4)');
+  it('GET /categorias devuelve las 10 sugeridas tras crear el perfil', async () => {
+    await http()
+      .post('/perfil')
+      .set(auth)
+      .send({ moneda: 'PEN', zonaHoraria: 'America/Lima' })
+      .expect(201);
+    const res = await http().get('/categorias').set(auth).expect(200);
+    expect(res.body).toHaveLength(10);
+  });
 
   it('POST con moneda inválida o campos extra -> 400', async () => {
     await http()

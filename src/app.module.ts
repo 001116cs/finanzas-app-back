@@ -9,10 +9,11 @@ import { FiltroErrores } from './compartido/filtro-errores.js';
 import { DbModule } from './db/db.module.js';
 import { PerfilRequeridoGuard } from './compartido/perfil-requerido.guard.js';
 import { PerfilModule } from './perfil/perfil.module.js';
+import { CategoriasModule } from './categorias/categorias.module.js';
 import { HealthController } from './health/health.controller.js';
 
 @Module({
-  imports: [DbModule, PerfilModule],
+  imports: [DbModule, PerfilModule, CategoriasModule],
   controllers: [HealthController],
   providers: [
     {
