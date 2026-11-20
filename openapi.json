@@ -228,7 +228,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoriaRespuesta"
+                  }
                 }
               }
             }
@@ -987,27 +990,6 @@
           }
         }
       },
-      "CrearCategoriaDto": {
-        "type": "object",
-        "properties": {
-          "nombre": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 50
-          },
-          "tipo": {
-            "type": "string",
-            "enum": [
-              "gasto",
-              "ingreso"
-            ]
-          }
-        },
-        "required": [
-          "nombre",
-          "tipo"
-        ]
-      },
       "CategoriaRespuesta": {
         "type": "object",
         "properties": {
@@ -1035,6 +1017,27 @@
           "nombre",
           "tipo",
           "cantidadMovimientos"
+        ]
+      },
+      "CrearCategoriaDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "gasto",
+              "ingreso"
+            ]
+          }
+        },
+        "required": [
+          "nombre",
+          "tipo"
         ]
       },
       "RenombrarCategoriaDto": {

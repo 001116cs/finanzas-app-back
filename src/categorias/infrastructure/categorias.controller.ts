@@ -50,7 +50,7 @@ export class CategoriasController {
     @Inject(EliminarCategoria) private readonly eliminar: EliminarCategoria,
   ) {}
 
-  @ApiOkResponse({ type: () => [CategoriaRespuesta] })
+  @ApiOkResponse({ type: [CategoriaRespuesta] })
   @Get()
   get(@UsuarioActual() userId: string, @Query() q: ListarCategoriasQuery) {
     return this.listar.ejecutar(userId, q.tipo);

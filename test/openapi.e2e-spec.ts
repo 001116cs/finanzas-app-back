@@ -41,6 +41,33 @@ describe('OpenAPI y CORS', () => {
     );
   });
 
+  it('GET /categorias documenta un arreglo de CategoriaRespuesta', () => {
+    const doc = construirDocumento(app);
+    const resp = doc.paths['/categorias']?.get?.responses?.['200'] as {
+      content: Record<string, { schema: unknown }>;
+    };
+    expect(resp.content['application/json'].schema).toEqual({
+      type: 'array',
+      items: { $ref: '#/components/schemas/CategoriaRespuesta' },
+    });
+  });
+
+  it('ningún $ref del documento está vacío', () => {
+    const vacios: string[] = [];
+    const recorrer = (nodo: unknown, ruta: string): void => {
+      if (Array.isArray(nodo)) {
+        nodo.forEach((v, i) => recorrer(v, `${ruta}/${i}`));
+      } else if (nodo && typeof nodo === 'object') {
+        for (const [k, v] of Object.entries(nodo)) {
+          if (k === '$ref' && v === '#/components/schemas/') vacios.push(ruta);
+          recorrer(v, `${ruta}/${k}`);
+        }
+      }
+    };
+    recorrer(construirDocumento(app), '');
+    expect(vacios).toEqual([]);
+  });
+
   it('las rutas protegidas exigen bearer y /health no', () => {
     const doc = construirDocumento(app);
     expect(doc.paths['/perfil']?.get?.security).toEqual([{ bearer: [] }]);
