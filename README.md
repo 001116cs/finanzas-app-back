@@ -12,9 +12,11 @@ Node 22+, Docker.
 cp .env.example .env        # completa SUPABASE_URL con tu proyecto
 docker compose up -d        # Postgres 16: bases `finanzas` y `finanzas_test`
 npm ci
-DATABASE_URL=postgres://finanzas:finanzas@localhost:5432/finanzas npm run build && npm run db:migrate
+npm run build && npm run db:migrate   # lee DATABASE_URL de .env
 npm run start:dev           # http://localhost:3001 (Swagger UI en /docs)
 ```
+
+`main.ts` y `migrar.ts` cargan `.env` si existe (las variables ya definidas en el entorno tienen prioridad). Si arrancas con `SUPABASE_URL` de ejemplo (`TU-PROYECTO`) el servidor levanta, pero las peticiones autenticadas fallarán hasta que apuntes a tu proyecto.
 
 ## Variables de entorno
 
@@ -22,7 +24,7 @@ npm run start:dev           # http://localhost:3001 (Swagger UI en /docs)
 |---|---|
 | `DATABASE_URL` | Conexión a Postgres de la app. |
 | `DATABASE_URL_TEST` | Postgres para los tests e2e (sólo desarrollo). |
-| `SUPABASE_URL` | URL del proyecto Supabase; de ahí se obtienen las claves (JWKS) para validar el JWT. |
+| `SUPABASE_URL` | URL del proyecto Supabase; de ahí se obtienen las claves (JWKS) para validar el JWT. El proyecto debe usar claves de firma JWT asimétricas (Project Settings → JWT Keys); el secreto HS256 heredado no valida. |
 | `FRONT_URL` | Origen del front; es el único permitido por CORS. |
 | `PORT` | Puerto HTTP (por defecto `3001`). |
 
