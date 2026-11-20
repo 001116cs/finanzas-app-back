@@ -1,4 +1,5 @@
 import { ValidacionError } from '../../compartido/errores.js';
+import { esZonaHorariaValida } from '../../compartido/zona-horaria.js';
 
 export interface Perfil {
   id: string;
@@ -28,7 +29,6 @@ export const CATEGORIAS_SUGERIDAS: readonly CategoriaSugerida[] = [
 ];
 
 const MONEDAS = new Set(Intl.supportedValuesOf('currency'));
-const ZONAS = new Set(Intl.supportedValuesOf('timeZone'));
 
 export function validarMoneda(moneda: string): string {
   if (!MONEDAS.has(moneda))
@@ -37,7 +37,7 @@ export function validarMoneda(moneda: string): string {
 }
 
 export function validarZonaHoraria(zona: string): string {
-  if (!ZONAS.has(zona))
+  if (!esZonaHorariaValida(zona))
     throw new ValidacionError('Zona horaria inválida (IANA)');
   return zona;
 }

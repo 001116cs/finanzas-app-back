@@ -54,7 +54,7 @@ describe('CrearPerfil', () => {
     await caso.ejecutar('u1', datos);
     const r = await caso.ejecutar('u1', {
       moneda: 'USD',
-      zonaHoraria: 'America/Bogota',
+      zonaHoraria: 'UTC',
     });
     expect(r.creado).toBe(false);
     expect(r.perfil.moneda).toBe('PEN');

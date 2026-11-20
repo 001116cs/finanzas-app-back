@@ -48,7 +48,7 @@ describe('perfil', () => {
     await http()
       .post('/perfil')
       .set(auth)
-      .send({ moneda: 'USD', zonaHoraria: 'America/Bogota' })
+      .send({ moneda: 'USD', zonaHoraria: 'UTC' })
       .expect(200);
     expect(
       await db
