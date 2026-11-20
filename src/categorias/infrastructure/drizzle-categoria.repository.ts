@@ -127,7 +127,11 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
       const [cat] = await tx
         .select({ id: categories.id, tipo: categories.tipo })
         .from(categories)
-        .where(and(eq(categories.id, id), eq(categories.userId, userId)));
+        .where(and(eq(categories.id, id), eq(categories.userId, userId)))
+        // Bloquea la fila: un insert/move concurrente hacia esta categoría
+        // espera (FK KEY SHARE) y falla al confirmarse el borrado, en vez de
+        // quedar con category_id null por el ON DELETE SET NULL.
+        .for('update');
       if (!cat) throw new NoEncontradoError('Categoría no encontrada');
 
       if (modo === 'mover') {

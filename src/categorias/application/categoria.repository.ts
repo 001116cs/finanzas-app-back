@@ -11,7 +11,7 @@ export const MODOS_ELIMINACION: readonly ModoEliminacion[] = [
 ];
 
 export interface CategoriaRepository {
-  /** Ordenadas por nombre. */
+  /** Ordenadas por lower(nombre), id. */
   listar(userId: string, tipo?: TipoMovimiento): Promise<CategoriaConConteo[]>;
   obtener(userId: string, id: string): Promise<Categoria | null>;
   /** Lanza ConflictoError('CATEGORIA_DUPLICADA') si ya existe. */

@@ -28,7 +28,11 @@ describe('DELETE /categorias/:id', () => {
     await app.close();
   });
 
-  const crearCat = async (auth: Record<string, string>, nombre: string, tipo = 'gasto') =>
+  const crearCat = async (
+    auth: Record<string, string>,
+    nombre: string,
+    tipo = 'gasto',
+  ) =>
     (
       await http()
         .post('/categorias')
@@ -155,6 +159,16 @@ describe('DELETE /categorias/:id', () => {
     }
     expect((await conteo(authA, c.id))!.cantidadMovimientos).toBe(3);
     expect((await conteo(authB, deB.id))!.cantidadMovimientos).toBe(0);
+  });
+
+  it('mover sin destinoId en categoría sin movimientos -> 400 DESTINO_INVALIDO', async () => {
+    const c = await crearCat(authA, 'Vacia2');
+    const res = await http()
+      .delete(`/categorias/${c.id}?modo=mover`)
+      .set(authA)
+      .expect(400);
+    expect(res.body.codigo).toBe('DESTINO_INVALIDO');
+    expect(await conteo(authA, c.id)).toBeDefined();
   });
 
   it('B borra categoría de A -> 404 y nada cambia; id inexistente -> 404', async () => {
