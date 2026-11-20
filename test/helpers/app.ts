@@ -1,5 +1,5 @@
 import { INestApplication, Type } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+import { Test, type TestingModuleBuilder } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module.js';
 import { NoAutenticadoError } from '../../src/compartido/errores.js';
 import {
@@ -20,17 +20,18 @@ export class VerificadorFalso implements VerificadorDeToken {
   }
 }
 
-/** `extras`: módulos adicionales sólo para tests (rutas de prueba). */
+/** `extras`: módulos adicionales sólo para tests (rutas de prueba). `ajustar`: overrides extra (p. ej. RELOJ). */
 export async function crearAppTest(
   extras: Type<unknown>[] = [],
+  ajustar: (b: TestingModuleBuilder) => TestingModuleBuilder = (b) => b,
 ): Promise<INestApplication> {
   process.env.DATABASE_URL = urlBdTest();
-  const modulo = await Test.createTestingModule({
+  const builder = Test.createTestingModule({
     imports: [AppModule, ...extras],
   })
     .overrideProvider(VERIFICADOR_DE_TOKEN)
-    .useValue(new VerificadorFalso())
-    .compile();
+    .useValue(new VerificadorFalso());
+  const modulo = await ajustar(builder).compile();
   const app = modulo.createNestApplication();
   app.useGlobalPipes(crearPipeValidacion());
   await app.init();

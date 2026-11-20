@@ -71,6 +71,9 @@ class RepoMemoria implements TransaccionRepository {
   async listar() {
     return { items: this.filas, total: this.filas.length };
   }
+  async totales() {
+    return { porCategoria: [] };
+  }
 }
 
 function armar() {

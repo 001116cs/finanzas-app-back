@@ -57,3 +57,8 @@ export class ListarTransaccionesQuery {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) tamano: number =
     50;
 }
+
+export class ResumenQuery {
+  @IsOptional() @Matches(FECHA) desde?: string;
+  @IsOptional() @Matches(FECHA) hasta?: string;
+}

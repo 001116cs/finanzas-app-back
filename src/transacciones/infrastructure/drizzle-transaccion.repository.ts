@@ -1,5 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, count, desc, eq, gte, isNull, lte, type SQL } from 'drizzle-orm';
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gte,
+  isNull,
+  lte,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { Monto } from '../../compartido/monto.js';
 import { DB } from '../../db/db.module.js';
@@ -134,5 +144,35 @@ export class DrizzleTransaccionRepository implements TransaccionRepository {
       .from(transactions)
       .where(where);
     return { items: filas.map(aDominio), total: n };
+  }
+
+  async totales(userId: string, desde: string, hasta: string) {
+    // Suma en centavos enteros (bigint) para evitar floats; llega como string.
+    const centavos = sql<string>`sum(round(${transactions.monto} * 100))`;
+    const filas = await this.db
+      .select({
+        categoriaId: transactions.categoryId,
+        nombre: categories.nombre,
+        tipo: transactions.tipo,
+        centavos,
+      })
+      .from(transactions)
+      .leftJoin(categories, eq(categories.id, transactions.categoryId))
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          gte(transactions.fecha, desde),
+          lte(transactions.fecha, hasta),
+        ),
+      )
+      .groupBy(transactions.categoryId, categories.nombre, transactions.tipo);
+    return {
+      porCategoria: filas.map((f) => ({
+        categoriaId: f.categoriaId,
+        nombre: f.nombre ?? 'Sin categoría',
+        tipo: f.tipo,
+        centavos: Number(f.centavos),
+      })),
+    };
   }
 }

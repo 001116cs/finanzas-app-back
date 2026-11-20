@@ -20,6 +20,13 @@ export interface FiltrosTransaccion {
   tamano: number;
 }
 
+export interface TotalCategoria {
+  categoriaId: string | null;
+  nombre: string;
+  tipo: TipoMovimiento;
+  centavos: number;
+}
+
 export interface TransaccionRepository {
   /** El origen siempre es 'manual' en esta fase. */
   crear(userId: string, datos: DatosTransaccion): Promise<Transaccion>;
@@ -37,6 +44,12 @@ export interface TransaccionRepository {
     userId: string,
     filtros: FiltrosTransaccion,
   ): Promise<{ items: Transaccion[]; total: number }>;
+  /** Suma por (categoría, tipo) en [desde, hasta], ambos inclusive. */
+  totales(
+    userId: string,
+    desde: string,
+    hasta: string,
+  ): Promise<{ porCategoria: TotalCategoria[] }>;
 }
 
 export const TRANSACCION_REPOSITORY = Symbol('TRANSACCION_REPOSITORY');
