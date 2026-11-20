@@ -315,4 +315,39 @@ describe('transacciones', () => {
     const deA = await http().get('/transacciones').set(authA).expect(200);
     expect(deA.body.items).toEqual([t]);
   });
+
+  it('PATCH con null en campo no nulo -> 400 y la fila no cambia', async () => {
+    const t = await crear(authA, gasto());
+    for (const campo of ['tipo', 'monto', 'fecha', 'descripcion'])
+      await http()
+        .patch(`/transacciones/${t.id}`)
+        .set(authA)
+        .send({ [campo]: null })
+        .expect(400);
+    const r = await http().get('/transacciones').set(authA).expect(200);
+    expect(r.body.items).toEqual([t]);
+  });
+
+  it('total es correcto combinando filtro y paginación', async () => {
+    for (let i = 1; i <= 3; i++)
+      await crear(
+        authA,
+        gasto({ fecha: `2026-03-0${i}`, descripcion: `g${i}` }),
+      );
+    await crear(authA, {
+      tipo: 'ingreso',
+      monto: '5',
+      fecha: '2026-03-05',
+      descripcion: 'i',
+      categoriaId: null,
+    });
+    const r = await http()
+      .get('/transacciones?tipo=gasto&pagina=2&tamano=2')
+      .set(authA)
+      .expect(200);
+    expect(r.body.total).toBe(3);
+    expect(
+      r.body.items.map((t: { descripcion: string }) => t.descripcion),
+    ).toEqual(['g1']);
+  });
 });

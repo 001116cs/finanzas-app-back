@@ -28,17 +28,27 @@ export class CrearTransaccionDto {
 }
 
 export class EditarTransaccionDto {
-  @IsOptional() @IsIn(TIPOS_MOVIMIENTO) tipo?: TipoMovimiento;
-  @IsOptional() @IsString() monto?: string;
-  @IsOptional() @Matches(FECHA) fecha?: string;
-  @IsOptional() @IsString() descripcion?: string;
+  @ValidateIf((o: EditarTransaccionDto) => o.tipo !== undefined)
+  @IsIn(TIPOS_MOVIMIENTO)
+  tipo?: TipoMovimiento;
+  @ValidateIf((o: EditarTransaccionDto) => o.monto !== undefined)
+  @IsString()
+  monto?: string;
+  @ValidateIf((o: EditarTransaccionDto) => o.fecha !== undefined)
+  @Matches(FECHA)
+  fecha?: string;
+  @ValidateIf((o: EditarTransaccionDto) => o.descripcion !== undefined)
+  @IsString()
+  descripcion?: string;
   @IsOptional() @IsUUID() categoriaId?: string | null;
 }
 
 export class ListarTransaccionesQuery {
   @IsOptional() @Matches(FECHA) desde?: string;
   @IsOptional() @Matches(FECHA) hasta?: string;
-  @IsOptional() @IsIn(TIPOS_MOVIMIENTO) tipo?: TipoMovimiento;
+  @ValidateIf((o: EditarTransaccionDto) => o.tipo !== undefined)
+  @IsIn(TIPOS_MOVIMIENTO)
+  tipo?: TipoMovimiento;
   @IsOptional()
   @ValidateIf((o: ListarTransaccionesQuery) => o.categoriaId !== 'sin')
   @IsUUID()
