@@ -6,6 +6,7 @@ import {
   VERIFICADOR_DE_TOKEN,
   type VerificadorDeToken,
 } from '../../src/compartido/auth/verificador-de-token.js';
+import { crearPipeValidacion } from '../../src/compartido/pipe-validacion.js';
 import { urlBdTest } from './db.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -31,6 +32,7 @@ export async function crearAppTest(
     .useValue(new VerificadorFalso())
     .compile();
   const app = modulo.createNestApplication();
+  app.useGlobalPipes(crearPipeValidacion());
   await app.init();
   return app;
 }

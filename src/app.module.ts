@@ -7,10 +7,12 @@ import { JoseVerificador } from './compartido/auth/jose-verificador.js';
 import { VERIFICADOR_DE_TOKEN } from './compartido/auth/verificador-de-token.js';
 import { FiltroErrores } from './compartido/filtro-errores.js';
 import { DbModule } from './db/db.module.js';
+import { PerfilRequeridoGuard } from './compartido/perfil-requerido.guard.js';
+import { PerfilModule } from './perfil/perfil.module.js';
 import { HealthController } from './health/health.controller.js';
 
 @Module({
-  imports: [DbModule],
+  imports: [DbModule, PerfilModule],
   controllers: [HealthController],
   providers: [
     {
@@ -23,7 +25,9 @@ import { HealthController } from './health/health.controller.js';
         );
       },
     },
+    // El orden importa: AuthGuard primero, luego PerfilRequeridoGuard.
     { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: PerfilRequeridoGuard },
     { provide: APP_FILTER, useClass: FiltroErrores },
   ],
 })

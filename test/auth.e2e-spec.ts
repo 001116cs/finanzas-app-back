@@ -1,8 +1,10 @@
 import { Controller, Get, INestApplication, Module } from '@nestjs/common';
 import request from 'supertest';
 import { UsuarioActual } from '../src/compartido/auth/decoradores.js';
+import { SinPerfil } from '../src/compartido/perfil-requerido.guard.js';
 import { crearAppTest } from './helpers/app.js';
 
+@SinPerfil()
 @Controller('protegida-test')
 class ProtegidaTestController {
   @Get()
