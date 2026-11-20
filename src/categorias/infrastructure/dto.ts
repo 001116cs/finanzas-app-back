@@ -2,6 +2,7 @@ import {
   MODOS_ELIMINACION,
   type ModoEliminacion,
 } from '../application/categoria.repository.js';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
 import {
   TIPOS_MOVIMIENTO,
@@ -9,19 +10,38 @@ import {
 } from '../../compartido/tipos.js';
 
 export class CrearCategoriaDto {
-  @IsString() nombre!: string;
-  @IsIn(TIPOS_MOVIMIENTO) tipo!: TipoMovimiento;
+  @ApiProperty({ type: String, minLength: 1, maxLength: 50 })
+  @IsString()
+  nombre!: string;
+  @ApiProperty({ type: String, enum: TIPOS_MOVIMIENTO })
+  @IsIn(TIPOS_MOVIMIENTO)
+  tipo!: TipoMovimiento;
 }
 
 export class RenombrarCategoriaDto {
-  @IsString() nombre!: string;
+  @ApiProperty({ type: String, minLength: 1, maxLength: 50 })
+  @IsString()
+  nombre!: string;
 }
 
 export class ListarCategoriasQuery {
-  @IsOptional() @IsIn(TIPOS_MOVIMIENTO) tipo?: TipoMovimiento;
+  @ApiPropertyOptional({ type: String, enum: TIPOS_MOVIMIENTO })
+  @IsOptional()
+  @IsIn(TIPOS_MOVIMIENTO)
+  tipo?: TipoMovimiento;
 }
 
 export class EliminarCategoriaQuery {
-  @IsOptional() @IsIn(MODOS_ELIMINACION) modo?: ModoEliminacion;
-  @IsOptional() @IsUUID() destinoId?: string;
+  @ApiPropertyOptional({ type: String, enum: MODOS_ELIMINACION })
+  @IsOptional()
+  @IsIn(MODOS_ELIMINACION)
+  modo?: ModoEliminacion;
+  @ApiPropertyOptional({
+    type: String,
+    format: 'uuid',
+    description: 'Obligatorio con modo=mover',
+  })
+  @IsOptional()
+  @IsUUID()
+  destinoId?: string;
 }

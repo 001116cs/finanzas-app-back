@@ -1,14 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
-import { crearPipeValidacion } from './compartido/pipe-validacion.js';
+import { configurarApp } from './compartido/configurar-app.js';
+import { montarSwaggerUi } from './compartido/openapi.js';
 import { cargarEnv } from './config/env.js';
 
 async function bootstrap() {
   const env = cargarEnv();
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(crearPipeValidacion());
+  configurarApp(app, env.FRONT_URL);
+  montarSwaggerUi(app, process.env.NODE_ENV === 'production');
   app.enableShutdownHooks();
-  app.enableCors({ origin: env.FRONT_URL });
   await app.listen(env.PORT);
 }
 await bootstrap();

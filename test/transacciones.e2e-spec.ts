@@ -13,7 +13,11 @@ describe('transacciones', () => {
   let app: INestApplication;
   const http = () => request(app.getHttpServer());
 
-  async function categoria(auth: object, tipo: string, nombre?: string) {
+  async function categoria(
+    auth: Record<string, string>,
+    tipo: string,
+    nombre?: string,
+  ) {
     const lista = await http()
       .get(`/categorias?tipo=${tipo}`)
       .set(auth)
@@ -31,7 +35,7 @@ describe('transacciones', () => {
     categoriaId: null,
     ...over,
   });
-  const crear = async (auth: object, body: object) =>
+  const crear = async (auth: Record<string, string>, body: object) =>
     (await http().post('/transacciones').set(auth).send(body).expect(201)).body;
 
   beforeAll(async () => {

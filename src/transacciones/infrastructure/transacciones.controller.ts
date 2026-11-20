@@ -11,6 +11,23 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiConflictResponse,
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+} from '@nestjs/swagger';
+import { ErrorRespuesta } from '../../compartido/respuestas.js';
+import { ESQUEMA_BEARER } from '../../compartido/openapi.js';
+import {
+  ListaTransaccionesRespuesta,
+  TransaccionRespuesta,
+} from './respuestas.js';
 import { UsuarioActual } from '../../compartido/auth/decoradores.js';
 import { CrearTransaccion } from '../application/crear-transaccion.js';
 import { EditarTransaccion } from '../application/editar-transaccion.js';
@@ -37,6 +54,10 @@ function presentar(t: Transaccion) {
   };
 }
 
+@ApiBearerAuth(ESQUEMA_BEARER)
+@ApiTags('transacciones')
+@ApiUnauthorizedResponse({ type: ErrorRespuesta })
+@ApiConflictResponse({ type: ErrorRespuesta, description: 'PERFIL_REQUERIDO' })
 @Controller('transacciones')
 export class TransaccionesController {
   constructor(
@@ -46,6 +67,8 @@ export class TransaccionesController {
     @Inject(EliminarTransaccion) private readonly eliminar: EliminarTransaccion,
   ) {}
 
+  @ApiCreatedResponse({ type: TransaccionRespuesta })
+  @ApiBadRequestResponse({ type: ErrorRespuesta })
   @Post()
   async post(
     @UsuarioActual() userId: string,
@@ -54,6 +77,8 @@ export class TransaccionesController {
     return presentar(await this.crear.ejecutar(userId, dto));
   }
 
+  @ApiOkResponse({ type: ListaTransaccionesRespuesta })
+  @ApiBadRequestResponse({ type: ErrorRespuesta })
   @Get()
   async get(
     @UsuarioActual() userId: string,
@@ -63,6 +88,9 @@ export class TransaccionesController {
     return { items: items.map(presentar), total };
   }
 
+  @ApiOkResponse({ type: TransaccionRespuesta })
+  @ApiBadRequestResponse({ type: ErrorRespuesta })
+  @ApiNotFoundResponse({ type: ErrorRespuesta })
   @Patch(':id')
   async patch(
     @UsuarioActual() userId: string,
@@ -72,6 +100,8 @@ export class TransaccionesController {
     return presentar(await this.editar.ejecutar(userId, id, dto));
   }
 
+  @ApiNoContentResponse({ description: 'Transacción eliminada' })
+  @ApiNotFoundResponse({ type: ErrorRespuesta })
   @Delete(':id')
   @HttpCode(204)
   async delete(
