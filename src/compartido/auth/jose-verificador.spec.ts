@@ -5,8 +5,12 @@ import {
   generateKeyPair,
   type JWK,
   type CryptoKey,
+  errors,
 } from 'jose';
-import { NoAutenticadoError } from '../errores.js';
+import {
+  NoAutenticadoError,
+  ServicioNoDisponibleError,
+} from '../errores.js';
 import { JoseVerificador } from './jose-verificador.js';
 
 const ISSUER = 'https://test.supabase.co/auth/v1';
@@ -92,5 +96,33 @@ describe('JoseVerificador', () => {
     await expect(verificador.verificar('basura')).rejects.toBeInstanceOf(
       NoAutenticadoError,
     );
+  });
+
+  describe('fallos de infraestructura', () => {
+    const casos: [string, Error][] = [
+      ['error de red (TypeError de fetch)', new TypeError('fetch failed')],
+      ['JWKSTimeout', new errors.JWKSTimeout()],
+      ['JWKSInvalid', new errors.JWKSInvalid('jwks roto')],
+      ['respuesta HTTP no 200 del JWKS', new errors.JOSEError('Expected 200 OK')],
+    ];
+    it.each(casos)('%s lanza ServicioNoDisponibleError', async (_n, fallo) => {
+      const v = new JoseVerificador(async () => {
+        throw fallo;
+      }, ISSUER);
+      const token = await firmar(privada);
+      await expect(v.verificar(token)).rejects.toBeInstanceOf(
+        ServicioNoDisponibleError,
+      );
+    });
+
+    it('sin clave coincidente sigue siendo NoAutenticadoError', async () => {
+      const v = new JoseVerificador(async () => {
+        throw new errors.JWKSNoMatchingKey();
+      }, ISSUER);
+      const token = await firmar(privada);
+      await expect(v.verificar(token)).rejects.toBeInstanceOf(
+        NoAutenticadoError,
+      );
+    });
   });
 });

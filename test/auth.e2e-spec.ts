@@ -2,6 +2,8 @@ import { Controller, Get, INestApplication, Module } from '@nestjs/common';
 import request from 'supertest';
 import { UsuarioActual } from '../src/compartido/auth/decoradores.js';
 import { SinPerfil } from '../src/compartido/perfil-requerido.guard.js';
+import { ServicioNoDisponibleError } from '../src/compartido/errores.js';
+import { VERIFICADOR_DE_TOKEN } from '../src/compartido/auth/verificador-de-token.js';
 import { crearAppTest } from './helpers/app.js';
 
 @SinPerfil()
@@ -54,5 +56,32 @@ describe('autenticación', () => {
 
   it('GET /health sin header -> 200', async () => {
     await request(app.getHttpServer()).get('/health').expect(200);
+  });
+});
+
+describe('autenticación con el proveedor caído', () => {
+  let app: INestApplication;
+  beforeAll(async () => {
+    app = await crearAppTest([ProtegidaTestModule], (b) =>
+      b.overrideProvider(VERIFICADOR_DE_TOKEN).useValue({
+        verificar: async () => {
+          throw new ServicioNoDisponibleError();
+        },
+      }),
+    );
+  });
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('fallo de infraestructura -> 503 AUTH_NO_DISPONIBLE', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/protegida-test')
+      .set('Authorization', 'Bearer cualquiera')
+      .expect(503);
+    expect(res.body).toEqual({
+      codigo: 'AUTH_NO_DISPONIBLE',
+      mensaje: expect.any(String),
+    });
   });
 });

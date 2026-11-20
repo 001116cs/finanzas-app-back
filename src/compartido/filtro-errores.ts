@@ -10,6 +10,7 @@ import {
   ConflictoError,
   NoAutenticadoError,
   NoEncontradoError,
+  ServicioNoDisponibleError,
   ValidacionError,
 } from './errores.js';
 
@@ -30,6 +31,11 @@ export class FiltroErrores implements ExceptionFilter {
     if (error instanceof NoAutenticadoError)
       return {
         status: 401,
+        cuerpo: { codigo: error.codigo, mensaje: error.message },
+      };
+    if (error instanceof ServicioNoDisponibleError)
+      return {
+        status: 503,
         cuerpo: { codigo: error.codigo, mensaje: error.message },
       };
     if (error instanceof NoEncontradoError)

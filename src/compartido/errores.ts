@@ -5,6 +5,13 @@ export class NoAutenticadoError extends Error {
   }
 }
 
+export class ServicioNoDisponibleError extends Error {
+  readonly codigo = 'AUTH_NO_DISPONIBLE';
+  constructor(mensaje = 'Servicio de autenticación no disponible') {
+    super(mensaje);
+  }
+}
+
 export class NoEncontradoError extends Error {
   readonly codigo = 'NO_ENCONTRADO';
   constructor(mensaje = 'Recurso no encontrado') {
