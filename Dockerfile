@@ -13,4 +13,5 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/package.json ./
 EXPOSE 3001
+USER node
 CMD ["node", "dist/main"]
