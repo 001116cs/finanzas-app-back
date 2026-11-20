@@ -1,3 +1,10 @@
+// Carga .env si existe (en producción las variables vienen del entorno).
+try {
+  process.loadEnvFile();
+} catch {
+  // sin .env
+}
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { configurarApp } from './compartido/configurar-app.js';
