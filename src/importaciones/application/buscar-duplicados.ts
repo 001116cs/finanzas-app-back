@@ -4,6 +4,7 @@ import { fechaEnZona } from '../../compartido/fechas.js';
 import { RELOJ, type Reloj } from '../../compartido/reloj.js';
 import {
   claveDuplicado,
+  MAX_FILAS_LOTE,
   prepararFila,
   type FilaEntrada,
 } from '../domain/fila-importada.js';
@@ -11,8 +12,6 @@ import {
   IMPORTACION_REPOSITORY,
   type ImportacionRepository,
 } from './importacion.repository.js';
-
-export const MAX_FILAS_LOTE = 2000;
 
 export type FilaDuplicados = Pick<
   FilaEntrada,

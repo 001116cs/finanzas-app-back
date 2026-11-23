@@ -7,3 +7,10 @@ export class DuplicadosRespuesta {
   })
   indices!: number[];
 }
+
+export class ImportacionRespuesta {
+  @ApiProperty({ type: String, format: 'uuid' }) id!: string;
+  @ApiProperty({ type: String }) nombreArchivo!: string;
+  @ApiProperty({ type: Number }) filasImportadas!: number;
+  @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
+}

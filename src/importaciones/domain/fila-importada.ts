@@ -68,3 +68,13 @@ export function claveDuplicado(f: {
 }): string {
   return `${f.fecha}|${f.monto.centavos}|${f.tipo}|${f.descripcion.trim().toLowerCase()}`;
 }
+
+export const MAX_FILAS_LOTE = 2000;
+
+/** Clave de una categoría nueva dentro del lote: tipo + nombre sin mayúsculas. */
+export function claveCategoriaNueva(
+  tipo: TipoMovimiento,
+  nombre: string,
+): string {
+  return `${tipo}|${nombre.trim().toLowerCase()}`;
+}

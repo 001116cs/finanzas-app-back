@@ -145,3 +145,274 @@ describe('POST /importaciones/duplicados', () => {
     await duplicados(authA, [fila({ extra: 1 })]).expect(400);
   });
 });
+
+describe('POST /importaciones', () => {
+  let app: INestApplication;
+  const http = () => request(app.getHttpServer());
+  const guardar = (auth: Record<string, string>, body: object) =>
+    http().post('/importaciones').set(auth).send(body);
+  const lote = (filas: unknown[], over: object = {}) => ({
+    nombreArchivo: 'extracto.csv',
+    categoriasNuevas: [],
+    filas,
+    ...over,
+  });
+  const f = (over: object = {}) => ({
+    fecha: '2026-11-02',
+    descripcion: 'Compra',
+    monto: '10.00',
+    tipo: 'gasto',
+    categoriaId: null,
+    categoriaNueva: null,
+    ...over,
+  });
+  const crearCategoria = async (
+    auth: Record<string, string>,
+    nombre: string,
+    tipo = 'gasto',
+  ) =>
+    (
+      await http()
+        .post('/categorias')
+        .set(auth)
+        .send({ nombre, tipo })
+        .expect(201)
+    ).body as { id: string };
+  // El perfil siembra categorías por defecto (p. ej. Comida)
+  const categoriaSembrada = async (nombre: string) =>
+    (
+      (await http().get('/categorias').set(authA).expect(200)).body as {
+        id: string;
+        nombre: string;
+      }[]
+    ).find((c) => c.nombre === nombre)!;
+  const movimientos = async (auth: Record<string, string>) =>
+    (await http().get('/transacciones').set(auth).expect(200)).body.items as {
+      descripcion: string;
+      origen: string;
+      fecha: string;
+      categoriaNombre: string | null;
+    }[];
+  const categorias = async (auth: Record<string, string>) =>
+    (await http().get('/categorias').set(auth).expect(200)).body as {
+      nombre: string;
+      tipo: string;
+    }[];
+
+  beforeAll(async () => {
+    await migrarBdTest();
+    app = await crearAppTest([], (b) =>
+      b.overrideProvider(RELOJ).useValue({ ahora: () => AHORA }),
+    );
+  });
+  beforeEach(async () => {
+    await truncarTodo();
+    await http().post('/perfil').set(authA).send(perfil).expect(201);
+    await http().post('/perfil').set(authB).send(perfil).expect(201);
+  });
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('sin token -> 401', async () => {
+    await http()
+      .post('/importaciones')
+      .send(lote([f()]))
+      .expect(401);
+  });
+
+  it('guarda el lote: origen excel, categoría existente, nueva, ninguna y fecha null = hoy', async () => {
+    const comida = await categoriaSembrada('Comida');
+    const res = await guardar(
+      authA,
+      lote(
+        [
+          f({ descripcion: 'uno', categoriaId: comida.id }),
+          f({ descripcion: 'dos', categoriaNueva: 'Mascotas' }),
+          f({ descripcion: 'tres' }),
+          f({ descripcion: 'cuatro', fecha: null }),
+        ],
+        { categoriasNuevas: [{ nombre: 'Mascotas', tipo: 'gasto' }] },
+      ),
+    ).expect(201);
+    expect(res.body).toMatchObject({
+      nombreArchivo: 'extracto.csv',
+      filasImportadas: 4,
+    });
+    expect(res.body.id).toEqual(expect.any(String));
+    expect(res.body.createdAt).toEqual(expect.any(String));
+    const m = Object.fromEntries(
+      (await movimientos(authA)).map((x) => [x.descripcion, x]),
+    );
+    expect(m.uno).toMatchObject({ origen: 'excel', categoriaNombre: 'Comida' });
+    expect(m.dos).toMatchObject({
+      origen: 'excel',
+      categoriaNombre: 'Mascotas',
+    });
+    expect(m.tres).toMatchObject({ origen: 'excel', categoriaNombre: null });
+    expect(m.cuatro.fecha).toBe('2026-11-21');
+  });
+
+  it('categoriasNuevas con nombre existente (otra capitalización) la reutiliza, sin 409', async () => {
+    const comida = await categoriaSembrada('Comida');
+    await guardar(
+      authA,
+      lote([f({ categoriaNueva: 'comida' })], {
+        categoriasNuevas: [{ nombre: 'COMIDA', tipo: 'gasto' }],
+      }),
+    ).expect(201);
+    const cats = (await categorias(authA)).filter(
+      (c) => c.nombre.toLowerCase() === 'comida',
+    );
+    expect(cats).toHaveLength(1);
+    const [m] = await movimientos(authA);
+    expect(m.categoriaNombre).toBe('Comida');
+    expect(comida.id).toBeDefined();
+  });
+
+  it('mismo nombre en ambos tipos: cada fila usa la categoría de su tipo', async () => {
+    await guardar(
+      authA,
+      lote(
+        [
+          f({ descripcion: 'g', categoriaNueva: 'Varios' }),
+          f({ descripcion: 'i', tipo: 'ingreso', categoriaNueva: 'Varios' }),
+        ],
+        {
+          categoriasNuevas: [
+            { nombre: 'Varios', tipo: 'gasto' },
+            { nombre: 'Varios', tipo: 'ingreso' },
+          ],
+        },
+      ),
+    ).expect(201);
+    expect(
+      (await categorias(authA)).filter((c) => c.nombre === 'Varios'),
+    ).toHaveLength(2);
+  });
+
+  it('fila 7 inválida de 10 -> 400 fila 6 (0-based) y no se guarda nada, ni categorías nuevas', async () => {
+    const ajena = await crearCategoria(authB, 'De B');
+    const filas = Array.from({ length: 10 }, (_, i) =>
+      f({ descripcion: `m${i}`, categoriaNueva: i < 5 ? 'Mascotas' : null }),
+    );
+    filas[6] = f({ descripcion: 'mala', categoriaId: ajena.id });
+    const antes = (await categorias(authA)).length;
+    const res = await guardar(
+      authA,
+      lote(filas, {
+        categoriasNuevas: [{ nombre: 'Mascotas', tipo: 'gasto' }],
+      }),
+    ).expect(400);
+    expect(res.body).toMatchObject({
+      codigo: 'CATEGORIA_INCOMPATIBLE',
+      fila: 6,
+    });
+    expect(await movimientos(authA)).toHaveLength(0);
+    expect(await categorias(authA)).toHaveLength(antes);
+    expect((await http().get('/importaciones').set(authA)).status).not.toBe(
+      500,
+    );
+  });
+
+  it('categoriaId de otro usuario o de otro tipo -> 400 CATEGORIA_INCOMPATIBLE con fila', async () => {
+    const ajena = await crearCategoria(authB, 'De B');
+    const ingreso = await crearCategoria(authA, 'Premio raro', 'ingreso');
+    const r1 = await guardar(
+      authA,
+      lote([f(), f({ categoriaId: ajena.id })]),
+    ).expect(400);
+    expect(r1.body).toMatchObject({
+      codigo: 'CATEGORIA_INCOMPATIBLE',
+      fila: 1,
+    });
+    const r2 = await guardar(
+      authA,
+      lote([f({ categoriaId: ingreso.id })]),
+    ).expect(400);
+    expect(r2.body).toMatchObject({
+      codigo: 'CATEGORIA_INCOMPATIBLE',
+      fila: 0,
+    });
+  });
+
+  it('categoriaNueva no declarada, de otro tipo o junto a categoriaId -> 400 CATEGORIA_NUEVA_INVALIDA', async () => {
+    const r1 = await guardar(
+      authA,
+      lote([f({ categoriaNueva: 'Mascotas' })]),
+    ).expect(400);
+    expect(r1.body).toMatchObject({
+      codigo: 'CATEGORIA_NUEVA_INVALIDA',
+      fila: 0,
+    });
+    const r2 = await guardar(
+      authA,
+      lote([f({ categoriaNueva: 'Mascotas' })], {
+        categoriasNuevas: [{ nombre: 'Mascotas', tipo: 'ingreso' }],
+      }),
+    ).expect(400);
+    expect(r2.body.codigo).toBe('CATEGORIA_NUEVA_INVALIDA');
+    const comida = await categoriaSembrada('Comida');
+    const r3 = await guardar(
+      authA,
+      lote([f({ categoriaNueva: 'Mascotas', categoriaId: comida.id })], {
+        categoriasNuevas: [{ nombre: 'Mascotas', tipo: 'gasto' }],
+      }),
+    ).expect(400);
+    expect(r3.body.codigo).toBe('CATEGORIA_NUEVA_INVALIDA');
+  });
+
+  it('nombre de categoría nueva inválido -> 400 y no se guarda nada', async () => {
+    await guardar(
+      authA,
+      lote([f()], { categoriasNuevas: [{ nombre: '   ', tipo: 'gasto' }] }),
+    ).expect(400);
+    await guardar(
+      authA,
+      lote([f()], {
+        categoriasNuevas: [{ nombre: 'x'.repeat(51), tipo: 'gasto' }],
+      }),
+    ).expect(400);
+    expect(await movimientos(authA)).toHaveLength(0);
+  });
+
+  it('monto numérico, campos extra o tipo inválido -> 400', async () => {
+    await guardar(authA, lote([f({ monto: 12.5 })])).expect(400);
+    await guardar(authA, lote([f({ extra: 1 })])).expect(400);
+    await guardar(authA, lote([f({ tipo: 'otro' })])).expect(400);
+    await guardar(authA, lote([f({ categoriaId: 'no-uuid' })])).expect(400);
+    await guardar(authA, lote([f({ monto: '0' })])).expect(400);
+  });
+
+  it('nombreArchivo vacío o de más de 255 -> 400; 255 pasa', async () => {
+    await guardar(authA, lote([f()], { nombreArchivo: '' })).expect(400);
+    await guardar(
+      authA,
+      lote([f()], { nombreArchivo: 'a'.repeat(256) }),
+    ).expect(400);
+    await guardar(
+      authA,
+      lote([f()], { nombreArchivo: 'a'.repeat(255) }),
+    ).expect(201);
+  });
+
+  it('0 filas -> LOTE_VACIO; 2001 -> LOTE_DEMASIADO_GRANDE; 2000 pasa', async () => {
+    const r0 = await guardar(authA, lote([])).expect(400);
+    expect(r0.body.codigo).toBe('LOTE_VACIO');
+    const rn = await guardar(
+      authA,
+      lote(Array.from({ length: 2001 }, () => f())),
+    ).expect(400);
+    expect(rn.body.codigo).toBe('LOTE_DEMASIADO_GRANDE');
+    const ok = await guardar(
+      authA,
+      lote(Array.from({ length: 2000 }, () => f())),
+    ).expect(201);
+    expect(ok.body.filasImportadas).toBe(2000);
+  });
+
+  it('los movimientos son del usuario del token', async () => {
+    await guardar(authA, lote([f()])).expect(201);
+    expect(await movimientos(authB)).toHaveLength(0);
+  });
+});
