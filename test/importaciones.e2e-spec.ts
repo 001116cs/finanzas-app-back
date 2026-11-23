@@ -415,6 +415,42 @@ describe('POST /importaciones', () => {
     await guardar(authA, lote([f()])).expect(201);
     expect(await movimientos(authB)).toHaveLength(0);
   });
+
+  it('el extracto del banco (7 gastos y 3 ingresos, "Ambos") queda marcado como duplicado en las 10 filas', async () => {
+    const cuerpo = (
+      [
+        ['2026-11-02', 'PLIN-JUAN PEREZ', '45.00', 'gasto'],
+        ['2026-11-03', 'PAGO HABERES EMPRESA SAC', '3500.00', 'ingreso'],
+        ['2026-11-04', 'COMPRA TOTTUS LA MARINA', '187.40', 'gasto'],
+        ['2026-11-05', 'NETFLIX.COM', '44.90', 'gasto'],
+        ['2026-11-07', 'RETIRO CAJERO BCP', '200.00', 'gasto'],
+        ['2026-11-10', 'TRANSF. DE MARIA LOPEZ', '150.00', 'ingreso'],
+        ['2026-11-12', 'PAGO LUZ DEL SUR', '96.30', 'gasto'],
+        ['2026-11-15', 'UBER *TRIP', '18.50', 'gasto'],
+        ['2026-11-18', 'DEVOLUCION SAGA FALABELLA', '79.90', 'ingreso'],
+        ['2026-11-20', 'COMISION MANTENIMIENTO', '12.00', 'gasto'],
+      ] as const
+    ).map(([fecha, descripcion, monto, tipo]) =>
+      f({ fecha, descripcion, monto, tipo }),
+    );
+    await guardar(
+      authA,
+      lote(cuerpo, { nombreArchivo: '1-extracto-banco.csv' }),
+    ).expect(201);
+    const res = await http()
+      .post('/importaciones/duplicados')
+      .set(authA)
+      .send({
+        filas: cuerpo.map(({ fecha, descripcion, monto, tipo }) => ({
+          fecha,
+          descripcion,
+          monto,
+          tipo,
+        })),
+      })
+      .expect(200);
+    expect(res.body).toEqual({ indices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] });
+  });
 });
 
 describe('GET /importaciones y DELETE /importaciones/:id', () => {

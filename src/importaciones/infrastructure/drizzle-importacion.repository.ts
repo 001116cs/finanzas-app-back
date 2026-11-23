@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { ConflictoError } from '../../compartido/errores.js';
 import { Monto } from '../../compartido/monto.js';
 import { DB } from '../../db/db.module.js';
 import * as schema from '../../db/schema.js';
@@ -72,6 +73,13 @@ export class DrizzleImportacionRepository implements ImportacionRepository {
               sql`lower(${categories.nombre}) = lower(${c.nombre})`,
             ),
           );
+        // Sólo puede faltar si otra petición la borró entre el insert y el select.
+        if (!fila) {
+          throw new ConflictoError(
+            'CATEGORIA_NO_DISPONIBLE',
+            `No se pudo crear ni reutilizar la categoría "${c.nombre}"; inténtalo de nuevo`,
+          );
+        }
         ids.set(claveCategoriaNueva(c.tipo, c.nombre), fila.id);
       }
       const [imp] = await tx
