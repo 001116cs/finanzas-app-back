@@ -28,6 +28,16 @@ export class ValidacionError extends Error {
   }
 }
 
+/** Error de validación de una fila de un lote; `fila` es el índice 0-based. */
+export class ValidacionFilaError extends ValidacionError {
+  constructor(
+    readonly fila: number,
+    original: ValidacionError,
+  ) {
+    super(`Fila ${fila + 1}: ${original.message}`, original.codigo);
+  }
+}
+
 export class ConflictoError extends Error {
   constructor(
     readonly codigo: string,

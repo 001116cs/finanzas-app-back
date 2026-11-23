@@ -3,6 +3,7 @@ import {
   check,
   date,
   index,
+  integer,
   numeric,
   pgEnum,
   pgTable,
@@ -49,6 +50,16 @@ export const categories = pgTable(
   ],
 );
 
+export const imports = pgTable('imports', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
+  nombreArchivo: text('nombre_archivo').notNull(),
+  filasImportadas: integer('filas_importadas').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const transactions = pgTable(
   'transactions',
   {
@@ -62,6 +73,9 @@ export const transactions = pgTable(
       onDelete: 'set null',
     }),
     origen: origenMovimiento('origen').notNull().default('manual'),
+    importId: uuid('import_id').references(() => imports.id, {
+      onDelete: 'cascade',
+    }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

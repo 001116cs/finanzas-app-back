@@ -67,4 +67,24 @@ describe('schema', () => {
     expect(filas[0].id).toBe(tx.id);
     expect(filas[0].categoryId).toBeNull();
   });
+
+  it('borrar un import borra sus transacciones y deja las demás', async () => {
+    const [imp] = await db
+      .insert(schema.imports)
+      .values({ userId, nombreArchivo: 'a.csv', filasImportadas: 1 })
+      .returning();
+    const comun = {
+      userId,
+      tipo: 'gasto' as const,
+      monto: '10.00',
+      fecha: '2026-11-01',
+    };
+    await db.insert(schema.transactions).values([
+      { ...comun, descripcion: 'importada', importId: imp.id, origen: 'excel' },
+      { ...comun, descripcion: 'manual' },
+    ]);
+    await db.delete(schema.imports);
+    const filas = await db.select().from(schema.transactions);
+    expect(filas.map((f) => f.descripcion)).toEqual(['manual']);
+  });
 });

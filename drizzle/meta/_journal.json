@@ -8,6 +8,13 @@
       "when": 1795134730556,
       "tag": "0000_inicial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795396757729,
+      "tag": "0001_skinny_ultragirl",
+      "breakpoints": true
     }
   ]
 }

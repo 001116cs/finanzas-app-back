@@ -21,7 +21,7 @@ export async function truncarTodo(): Promise<void> {
   const cliente = postgres(urlBdTest(), { max: 1 });
   try {
     await cliente.unsafe(
-      'TRUNCATE TABLE transactions, categories, profiles RESTART IDENTITY CASCADE',
+      'TRUNCATE TABLE transactions, imports, categories, profiles RESTART IDENTITY CASCADE',
     );
   } finally {
     await cliente.end();

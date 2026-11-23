@@ -12,6 +12,7 @@ import {
   NoEncontradoError,
   ServicioNoDisponibleError,
   ValidacionError,
+  ValidacionFilaError,
 } from './errores.js';
 
 @Catch()
@@ -26,7 +27,7 @@ export class FiltroErrores implements ExceptionFilter {
 
   private mapear(error: unknown): {
     status: number;
-    cuerpo: { codigo: string; mensaje: string };
+    cuerpo: { codigo: string; mensaje: string; fila?: number };
   } {
     if (error instanceof NoAutenticadoError)
       return {
@@ -42,6 +43,15 @@ export class FiltroErrores implements ExceptionFilter {
       return {
         status: 404,
         cuerpo: { codigo: error.codigo, mensaje: error.message },
+      };
+    if (error instanceof ValidacionFilaError)
+      return {
+        status: 400,
+        cuerpo: {
+          codigo: error.codigo,
+          mensaje: error.message,
+          fila: error.fila,
+        },
       };
     if (error instanceof ValidacionError)
       return {
