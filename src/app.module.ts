@@ -11,10 +11,11 @@ import { PerfilRequeridoGuard } from './compartido/perfil-requerido.guard.js';
 import { PerfilModule } from './perfil/perfil.module.js';
 import { CategoriasModule } from './categorias/categorias.module.js';
 import { TransaccionesModule } from './transacciones/transacciones.module.js';
+import { ImportacionesModule } from './importaciones/importaciones.module.js';
 import { HealthController } from './health/health.controller.js';
 
 @Module({
-  imports: [DbModule, PerfilModule, CategoriasModule, TransaccionesModule],
+  imports: [DbModule, PerfilModule, CategoriasModule, TransaccionesModule, ImportacionesModule],
   controllers: [HealthController],
   providers: [
     {

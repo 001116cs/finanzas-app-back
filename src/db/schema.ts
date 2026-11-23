@@ -50,15 +50,19 @@ export const categories = pgTable(
   ],
 );
 
-export const imports = pgTable('imports', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull(),
-  nombreArchivo: text('nombre_archivo').notNull(),
-  filasImportadas: integer('filas_importadas').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const imports = pgTable(
+  'imports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull(),
+    nombreArchivo: text('nombre_archivo').notNull(),
+    filasImportadas: integer('filas_importadas').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index('imports_user_idx').on(t.userId)],
+);
 
 export const transactions = pgTable(
   'transactions',
@@ -83,5 +87,6 @@ export const transactions = pgTable(
   (t) => [
     check('transactions_monto_positivo', sql`${t.monto} > 0`),
     index('transactions_user_fecha_idx').on(t.userId, t.fecha),
+    index('transactions_import_idx').on(t.importId),
   ],
 );
