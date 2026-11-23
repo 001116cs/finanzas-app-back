@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { Monto } from '../../compartido/monto.js';
 import { DB } from '../../db/db.module.js';
@@ -104,5 +104,26 @@ export class DrizzleImportacionRepository implements ImportacionRepository {
         createdAt: imp.createdAt,
       };
     });
+  }
+
+  async listar(userId: string): Promise<Importacion[]> {
+    return this.db
+      .select({
+        id: imports.id,
+        nombreArchivo: imports.nombreArchivo,
+        filasImportadas: imports.filasImportadas,
+        createdAt: imports.createdAt,
+      })
+      .from(imports)
+      .where(eq(imports.userId, userId))
+      .orderBy(desc(imports.createdAt), desc(imports.id));
+  }
+
+  async eliminar(userId: string, id: string): Promise<boolean> {
+    const borradas = await this.db
+      .delete(imports)
+      .where(and(eq(imports.id, id), eq(imports.userId, userId)))
+      .returning({ id: imports.id });
+    return borradas.length > 0;
   }
 }

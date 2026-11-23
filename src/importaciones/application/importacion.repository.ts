@@ -35,6 +35,13 @@ export interface ImportacionRepository {
       filas: FilaPreparada[];
     },
   ): Promise<Importacion>;
+  /** Importaciones del usuario, la más reciente primero. */
+  listar(userId: string): Promise<Importacion[]>;
+  /**
+   * Borra el import del usuario; sus movimientos caen por ON DELETE CASCADE
+   * (las categorías creadas se conservan). `false` si no existe o es ajeno.
+   */
+  eliminar(userId: string, id: string): Promise<boolean>;
 }
 
 export const IMPORTACION_REPOSITORY = Symbol('IMPORTACION_REPOSITORY');

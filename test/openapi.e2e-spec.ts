@@ -22,6 +22,9 @@ describe('OpenAPI y CORS', () => {
       '/transacciones',
       '/transacciones/{id}',
       '/resumen',
+      '/importaciones',
+      '/importaciones/duplicados',
+      '/importaciones/{id}',
     ]) {
       expect(doc.paths).toHaveProperty([ruta]);
     }
@@ -50,6 +53,26 @@ describe('OpenAPI y CORS', () => {
       type: 'array',
       items: { $ref: '#/components/schemas/CategoriaRespuesta' },
     });
+  });
+
+  it('GET /importaciones documenta un arreglo; DELETE responde 204 y 404; POST 201', () => {
+    const doc = construirDocumento(app);
+    const resp = doc.paths['/importaciones']?.get?.responses?.['200'] as {
+      content: Record<string, { schema: unknown }>;
+    };
+    expect(resp.content['application/json'].schema).toEqual({
+      type: 'array',
+      items: { $ref: '#/components/schemas/ImportacionRespuesta' },
+    });
+    const del = doc.paths['/importaciones/{id}']?.delete?.responses;
+    expect(del).toHaveProperty(['204']);
+    expect(del).toHaveProperty(['404']);
+    expect(doc.paths['/importaciones']?.post?.responses).toHaveProperty([
+      '201',
+    ]);
+    expect(
+      doc.paths['/importaciones/duplicados']?.post?.responses,
+    ).toHaveProperty(['200']);
   });
 
   it('ningún $ref del documento está vacío', () => {

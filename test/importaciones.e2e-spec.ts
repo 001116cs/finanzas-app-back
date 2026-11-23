@@ -310,9 +310,9 @@ describe('POST /importaciones', () => {
     });
     expect(await movimientos(authA)).toHaveLength(0);
     expect(await categorias(authA)).toHaveLength(antes);
-    expect((await http().get('/importaciones').set(authA)).status).not.toBe(
-      500,
-    );
+    expect(
+      (await http().get('/importaciones').set(authA).expect(200)).body,
+    ).toEqual([]);
   });
 
   it('categoriaId de otro usuario o de otro tipo -> 400 CATEGORIA_INCOMPATIBLE con fila', async () => {
@@ -414,5 +414,129 @@ describe('POST /importaciones', () => {
   it('los movimientos son del usuario del token', async () => {
     await guardar(authA, lote([f()])).expect(201);
     expect(await movimientos(authB)).toHaveLength(0);
+  });
+});
+
+describe('GET /importaciones y DELETE /importaciones/:id', () => {
+  let app: INestApplication;
+  const http = () => request(app.getHttpServer());
+  const f = (descripcion: string, over: object = {}) => ({
+    fecha: '2026-11-02',
+    descripcion,
+    monto: '10.00',
+    tipo: 'gasto',
+    categoriaId: null,
+    categoriaNueva: null,
+    ...over,
+  });
+  const importar = async (
+    auth: Record<string, string>,
+    nombreArchivo: string,
+    filas: unknown[],
+    categoriasNuevas: object[] = [],
+  ) =>
+    (
+      await http()
+        .post('/importaciones')
+        .set(auth)
+        .send({ nombreArchivo, categoriasNuevas, filas })
+        .expect(201)
+    ).body as { id: string };
+  const movimientos = async (auth: Record<string, string>) =>
+    (await http().get('/transacciones').set(auth).expect(200)).body.items as {
+      id: string;
+      descripcion: string;
+    }[];
+
+  beforeAll(async () => {
+    await migrarBdTest();
+    app = await crearAppTest([], (b) =>
+      b.overrideProvider(RELOJ).useValue({ ahora: () => AHORA }),
+    );
+  });
+  beforeEach(async () => {
+    await truncarTodo();
+    await http().post('/perfil').set(authA).send(perfil).expect(201);
+    await http().post('/perfil').set(authB).send(perfil).expect(201);
+  });
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('sin token -> 401', async () => {
+    await http().get('/importaciones').expect(401);
+    await http().delete(`/importaciones/${A}`).expect(401);
+  });
+
+  it('GET lista las importaciones del usuario, la más reciente primero', async () => {
+    await importar(authA, 'a.csv', [f('a1'), f('a2')]);
+    await importar(authA, 'b.csv', [f('b1')]);
+    await importar(authB, 'ajena.csv', [f('x')]);
+    const res = await http().get('/importaciones').set(authA).expect(200);
+    expect(
+      res.body.map((i: { nombreArchivo: string }) => i.nombreArchivo),
+    ).toEqual(['b.csv', 'a.csv']);
+    expect(res.body[1]).toMatchObject({
+      filasImportadas: 2,
+      id: expect.any(String),
+      createdAt: expect.any(String),
+    });
+  });
+
+  it('GET sin importaciones -> []', async () => {
+    const res = await http().get('/importaciones').set(authA).expect(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('DELETE tras editar un movimiento borra todo el lote; quedan otros lotes y manuales; la categoría creada sigue', async () => {
+    const a = await importar(
+      authA,
+      'a.csv',
+      [f('a1', { categoriaNueva: 'Mascotas' }), f('a2'), f('a3')],
+      [{ nombre: 'Mascotas', tipo: 'gasto' }],
+    );
+    await importar(authA, 'b.csv', [f('b1')]);
+    await http()
+      .post('/transacciones')
+      .set(authA)
+      .send({
+        tipo: 'gasto',
+        monto: '5.00',
+        fecha: '2026-11-02',
+        descripcion: 'manual',
+        categoriaId: null,
+      })
+      .expect(201);
+    const a2 = (await movimientos(authA)).find((m) => m.descripcion === 'a2')!;
+    await http()
+      .patch(`/transacciones/${a2.id}`)
+      .set(authA)
+      .send({ descripcion: 'a2 editado', monto: '99.00' })
+      .expect(200);
+
+    await http().delete(`/importaciones/${a.id}`).set(authA).expect(204);
+
+    expect((await movimientos(authA)).map((m) => m.descripcion).sort()).toEqual(
+      ['b1', 'manual'],
+    );
+    const cats = (await http().get('/categorias').set(authA).expect(200))
+      .body as { nombre: string }[];
+    expect(cats.some((c) => c.nombre === 'Mascotas')).toBe(true);
+    const lista = (await http().get('/importaciones').set(authA).expect(200))
+      .body as { nombreArchivo: string }[];
+    expect(lista.map((i) => i.nombreArchivo)).toEqual(['b.csv']);
+  });
+
+  it('DELETE de una importación ajena o inexistente -> 404 y no borra nada', async () => {
+    const a = await importar(authA, 'a.csv', [f('a1')]);
+    await http().delete(`/importaciones/${a.id}`).set(authB).expect(404);
+    await http().delete(`/importaciones/${B}`).set(authA).expect(404);
+    expect(await movimientos(authA)).toHaveLength(1);
+    await http().delete(`/importaciones/${a.id}`).set(authA).expect(204);
+    await http().delete(`/importaciones/${a.id}`).set(authA).expect(404);
+  });
+
+  it('DELETE con id que no es UUID -> 400', async () => {
+    await http().delete('/importaciones/no-uuid').set(authA).expect(400);
   });
 });

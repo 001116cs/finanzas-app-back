@@ -89,9 +89,17 @@ export class GuardarImportacion {
       filas.push(fila);
     }
 
+    // Sólo se crean las categorías que alguna fila referencia.
+    const usadas = new Set(
+      filas
+        .filter((f) => f.categoriaNueva !== null)
+        .map((f) => claveCategoriaNueva(f.tipo, f.categoriaNueva!)),
+    );
     return this.repo.guardar(userId, {
       nombreArchivo: datos.nombreArchivo,
-      categoriasNuevas: [...nuevas.values()],
+      categoriasNuevas: [...nuevas]
+        .filter(([k]) => usadas.has(k))
+        .map(([, c]) => c),
       filas,
     });
   }

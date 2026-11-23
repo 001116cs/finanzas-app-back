@@ -913,6 +913,243 @@
           "resumen"
         ]
       }
+    },
+    "/importaciones/duplicados": {
+      "post": {
+        "operationId": "ImportacionesController_postDuplicados",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicadosDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicadosRespuesta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "LOTE_VACIO, LOTE_DEMASIADO_GRANDE o error de una fila (incluye `fila`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "importaciones"
+        ]
+      }
+    },
+    "/importaciones": {
+      "post": {
+        "operationId": "ImportacionesController_post",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportacionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportacionRespuesta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "LOTE_VACIO, LOTE_DEMASIADO_GRANDE, CATEGORIA_NUEVA_INVALIDA, CATEGORIA_INCOMPATIBLE o error de una fila (incluye `fila`, 0-based); no se guarda nada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "importaciones"
+        ]
+      },
+      "get": {
+        "operationId": "ImportacionesController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Importaciones del usuario, la más reciente primero",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ImportacionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "importaciones"
+        ]
+      }
+    },
+    "/importaciones/{id}": {
+      "delete": {
+        "operationId": "ImportacionesController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Importación deshecha: se borran todos sus movimientos (aunque se hayan editado); las categorías creadas se conservan"
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "importaciones"
+        ]
+      }
     }
   },
   "info": {
@@ -1286,6 +1523,186 @@
           "totalIngresos",
           "balance",
           "porCategoria"
+        ]
+      },
+      "FilaDuplicadoDto": {
+        "type": "object",
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-19",
+            "description": "YYYY-MM-DD; null = hoy en la zona horaria del perfil"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "monto": {
+            "type": "string",
+            "example": "12.50"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "gasto",
+              "ingreso"
+            ]
+          }
+        },
+        "required": [
+          "fecha",
+          "descripcion",
+          "monto",
+          "tipo"
+        ]
+      },
+      "DuplicadosDto": {
+        "type": "object",
+        "properties": {
+          "filas": {
+            "description": "1 a 2000 filas",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilaDuplicadoDto"
+            }
+          }
+        },
+        "required": [
+          "filas"
+        ]
+      },
+      "DuplicadosRespuesta": {
+        "type": "object",
+        "properties": {
+          "indices": {
+            "description": "Índices (0-based, ascendentes) de filas ya registradas",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "indices"
+        ]
+      },
+      "CategoriaNuevaDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "gasto",
+              "ingreso"
+            ]
+          }
+        },
+        "required": [
+          "nombre",
+          "tipo"
+        ]
+      },
+      "FilaImportacionDto": {
+        "type": "object",
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-19",
+            "description": "YYYY-MM-DD; null = hoy en la zona horaria del perfil"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "monto": {
+            "type": "string",
+            "example": "12.50"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "gasto",
+              "ingreso"
+            ]
+          },
+          "categoriaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Categoría existente del usuario y del tipo de la fila"
+          },
+          "categoriaNueva": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nombre de una de `categoriasNuevas` del mismo tipo; no puede combinarse con categoriaId"
+          }
+        },
+        "required": [
+          "fecha",
+          "descripcion",
+          "monto",
+          "tipo",
+          "categoriaId",
+          "categoriaNueva"
+        ]
+      },
+      "ImportacionDto": {
+        "type": "object",
+        "properties": {
+          "nombreArchivo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "categoriasNuevas": {
+            "description": "Categorías a crear",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoriaNuevaDto"
+            }
+          },
+          "filas": {
+            "description": "1 a 2000 filas",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilaImportacionDto"
+            }
+          }
+        },
+        "required": [
+          "nombreArchivo",
+          "categoriasNuevas",
+          "filas"
+        ]
+      },
+      "ImportacionRespuesta": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombreArchivo": {
+            "type": "string"
+          },
+          "filasImportadas": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "nombreArchivo",
+          "filasImportadas",
+          "createdAt"
         ]
       }
     }

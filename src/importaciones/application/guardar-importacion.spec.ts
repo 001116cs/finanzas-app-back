@@ -148,10 +148,30 @@ describe('GuardarImportacion', () => {
           { nombre: 'Mascotas', tipo: 'gasto' },
           { nombre: 'MASCOTAS', tipo: 'gasto' },
         ],
+        filas: [fila({ categoriaNueva: 'Mascotas' })],
       }),
     );
     expect(
       (guardados[0] as { categoriasNuevas: unknown[] }).categoriasNuevas,
     ).toHaveLength(1);
+  });
+
+  it('ignora categoriasNuevas que ninguna fila referencia', async () => {
+    const { uc, guardados } = caso();
+    await uc.ejecutar(
+      'u',
+      'America/Lima',
+      datos({
+        categoriasNuevas: [
+          { nombre: 'Mascotas', tipo: 'gasto' },
+          { nombre: 'Sin uso', tipo: 'gasto' },
+          { nombre: 'Mascotas', tipo: 'ingreso' },
+        ],
+        filas: [fila({ categoriaNueva: 'mascotas' })],
+      }),
+    );
+    expect(
+      (guardados[0] as { categoriasNuevas: unknown[] }).categoriasNuevas,
+    ).toEqual([{ nombre: 'Mascotas', tipo: 'gasto' }]);
   });
 });
