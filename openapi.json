@@ -1372,6 +1372,82 @@
         "tags": [
           "boletas"
         ]
+      },
+      "get": {
+        "operationId": "BoletasController_getLista",
+        "parameters": [
+          {
+            "name": "pagina",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "tamano",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 12,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaBoletasRespuesta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO (en escanear también LIMITE_BOLETAS, LIMITE_INTENTOS_FALLIDOS o LIMITE_GLOBAL_IA)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "boletas"
+        ]
       }
     },
     "/boletas/{id}": {
@@ -1393,7 +1469,90 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BoletaRespuesta"
+                  "$ref": "#/components/schemas/DetalleBoletaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO (en escanear también LIMITE_BOLETAS, LIMITE_INTENTOS_FALLIDOS o LIMITE_GLOBAL_IA)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "boletas"
+        ]
+      },
+      "patch": {
+        "operationId": "BoletasController_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditarBoletaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Boleta actualizada; si cambia la fecha, también la de todos sus gastos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalleBoletaRespuesta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDACION (incluye body sin campos), COMERCIO_INVALIDO, FECHA_INVALIDA o MONTO_INVALIDO",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
                 }
               }
             }
@@ -1453,6 +1612,91 @@
         "responses": {
           "204": {
             "description": "Boleta e imagen eliminadas; los gastos creados se conservan sin enlace a la boleta"
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO (en escanear también LIMITE_BOLETAS, LIMITE_INTENTOS_FALLIDOS o LIMITE_GLOBAL_IA)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "boletas"
+        ]
+      }
+    },
+    "/boletas/{id}/gastos": {
+      "post": {
+        "operationId": "BoletasController_postGasto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GastoBoletaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Gasto creado con la fecha de la boleta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransaccionRespuesta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDACION, MONTO_INVALIDO o CATEGORIA_INCOMPATIBLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
           },
           "401": {
             "description": "",
@@ -2263,7 +2507,7 @@
           "gastosCreados"
         ]
       },
-      "BoletaRespuesta": {
+      "ResumenBoletaRespuesta": {
         "type": "object",
         "properties": {
           "id": {
@@ -2286,6 +2530,15 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "gastos": {
+            "type": "number",
+            "description": "Cantidad de gastos enlazados"
+          },
+          "sumaGastos": {
+            "type": "string",
+            "example": "8.40",
+            "description": "Suma de los gastos, 2 decimales"
           }
         },
         "required": [
@@ -2293,7 +2546,113 @@
           "comercio",
           "fecha",
           "totalImpreso",
-          "createdAt"
+          "createdAt",
+          "gastos",
+          "sumaGastos"
+        ]
+      },
+      "ListaBoletasRespuesta": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumenBoletaRespuesta"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ]
+      },
+      "DetalleBoletaRespuesta": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "comercio": {
+            "type": "string"
+          },
+          "fecha": {
+            "type": "string",
+            "example": "2026-11-19",
+            "description": "YYYY-MM-DD"
+          },
+          "totalImpreso": {
+            "type": "string",
+            "nullable": true,
+            "example": "23.40"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "gastos": {
+            "description": "Gastos enlazados a la boleta, por orden de creación",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransaccionRespuesta"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "comercio",
+          "fecha",
+          "totalImpreso",
+          "createdAt",
+          "gastos"
+        ]
+      },
+      "EditarBoletaDto": {
+        "type": "object",
+        "properties": {
+          "comercio": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "fecha": {
+            "type": "string",
+            "example": "2026-11-19"
+          },
+          "totalImpreso": {
+            "type": "string",
+            "nullable": true,
+            "example": "23.40",
+            "description": "null quita el total impreso"
+          }
+        }
+      },
+      "GastoBoletaDto": {
+        "type": "object",
+        "properties": {
+          "descripcion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "monto": {
+            "type": "string",
+            "example": "12.50",
+            "description": "Mayor que 0"
+          },
+          "categoriaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "descripcion",
+          "monto",
+          "categoriaId"
         ]
       }
     }

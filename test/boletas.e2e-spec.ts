@@ -241,6 +241,7 @@ describe('boletas', () => {
         fecha: '2026-11-20',
         totalImpreso: '8.40',
         createdAt: expect.any(String),
+        gastos: expect.any(Array),
       });
 
       const img = await http()
@@ -303,6 +304,143 @@ describe('boletas', () => {
       }
       expect(await ficheros()).toBe(antes - 2); // imagen + .meta.json;
       await http().delete(`/boletas/${id}`).set(authA).expect(404);
+    });
+  });
+
+  describe('galería editable', () => {
+    const boleta = async (
+      auth: Record<string, string>,
+      fecha: string,
+      comercio = 'Bodega Demo',
+    ) =>
+      (await guardar(auth, datos({ fecha, comercio })).expect(201)).body
+        .id as string;
+    const manual = (auth: Record<string, string>, fecha: string) =>
+      http()
+        .post('/transacciones')
+        .set(auth)
+        .send({
+          tipo: 'gasto',
+          monto: '1.00',
+          fecha,
+          descripcion: 'Manual',
+          categoriaId: null,
+        })
+        .expect(201);
+
+    it('GET /boletas pagina, ordena por fecha desc y suma gastos', async () => {
+      await boleta(authA, '2026-11-10', 'Vieja');
+      await boleta(authA, '2026-11-20', 'Nueva');
+      await boleta(authA, '2026-11-15', 'Media');
+      const r = await http().get('/boletas?tamano=2').set(authA).expect(200);
+      expect(r.body.total).toBe(3);
+      expect(r.body.items).toHaveLength(2);
+      expect(r.body.items.map((i: { comercio: string }) => i.comercio)).toEqual(
+        ['Nueva', 'Media'],
+      );
+      expect(r.body.items[0]).toEqual({
+        id: expect.any(String),
+        comercio: 'Nueva',
+        fecha: '2026-11-20',
+        totalImpreso: '8.40',
+        gastos: 2,
+        sumaGastos: '8.40',
+        createdAt: expect.any(String),
+      });
+      const p2 = await http()
+        .get('/boletas?tamano=2&pagina=2')
+        .set(authA)
+        .expect(200);
+      expect(p2.body.items).toHaveLength(1);
+      await http().get('/boletas?pagina=0').set(authA).expect(400);
+      await http().get('/boletas?tamano=51').set(authA).expect(400);
+      const b = await http().get('/boletas').set(authB).expect(200);
+      expect(b.body).toEqual({ items: [], total: 0 });
+    });
+
+    it('GET /boletas/:id incluye gastos con boletaId', async () => {
+      const id = await boleta(authA, '2026-11-20');
+      const r = await http().get(`/boletas/${id}`).set(authA).expect(200);
+      expect(r.body.gastos).toHaveLength(2);
+      for (const g of r.body.gastos) {
+        expect(g.boletaId).toBe(id);
+        expect(g.origen).toBe('boleta');
+      }
+    });
+
+    it('PATCH cambia fecha de la boleta y sólo de sus gastos', async () => {
+      const id = await boleta(authA, '2026-11-20');
+      const otra = await boleta(authA, '2026-11-18');
+      await manual(authA, '2026-11-19');
+      const r = await http()
+        .patch(`/boletas/${id}`)
+        .set(authA)
+        .send({ fecha: '2026-11-05', comercio: ' Nuevo ', totalImpreso: null })
+        .expect(200);
+      expect(r.body.fecha).toBe('2026-11-05');
+      expect(r.body.comercio).toBe('Nuevo');
+      expect(r.body.totalImpreso).toBeNull();
+      expect(r.body.gastos).toHaveLength(2);
+      for (const g of r.body.gastos) expect(g.fecha).toBe('2026-11-05');
+      const o = await http().get(`/boletas/${otra}`).set(authA).expect(200);
+      for (const g of o.body.gastos) expect(g.fecha).toBe('2026-11-18');
+      const t = await http().get('/transacciones').set(authA).expect(200);
+      const man = t.body.items.find(
+        (x: { descripcion: string }) => x.descripcion === 'Manual',
+      );
+      expect(man.fecha).toBe('2026-11-19');
+    });
+
+    it('PATCH ajena -> 404 y nada cambia; {} -> 400', async () => {
+      const id = await boleta(authA, '2026-11-20');
+      await http()
+        .patch(`/boletas/${id}`)
+        .set(authB)
+        .send({ fecha: '2026-11-05' })
+        .expect(404);
+      const r = await http().get(`/boletas/${id}`).set(authA).expect(200);
+      expect(r.body.fecha).toBe('2026-11-20');
+      for (const g of r.body.gastos) expect(g.fecha).toBe('2026-11-20');
+      await http().patch(`/boletas/${id}`).set(authA).send({}).expect(400);
+    });
+
+    it('POST /boletas/:id/gastos crea gasto con fecha de la boleta', async () => {
+      const id = await boleta(authA, '2026-11-20');
+      const comida = await categoriaId(authA, 'Comida');
+      const r = await http()
+        .post(`/boletas/${id}/gastos`)
+        .set(authA)
+        .send({ descripcion: 'Agua', monto: '2.00', categoriaId: comida })
+        .expect(201);
+      expect(r.body).toMatchObject({
+        origen: 'boleta',
+        tipo: 'gasto',
+        boletaId: id,
+        fecha: '2026-11-20',
+        monto: '2.00',
+        categoriaId: comida,
+      });
+      const t = await http().get('/transacciones').set(authA).expect(200);
+      expect(t.body.total).toBe(3);
+      expect(
+        t.body.items.some((x: { id: string }) => x.id === r.body.id),
+      ).toBe(true);
+    });
+
+    it('POST gastos: ajena -> 404; categoría de ingreso -> 400', async () => {
+      const id = await boleta(authA, '2026-11-20');
+      await http()
+        .post(`/boletas/${id}/gastos`)
+        .set(authB)
+        .send({ descripcion: 'Agua', monto: '2.00', categoriaId: null })
+        .expect(404);
+      const l = await http().get('/categorias?tipo=ingreso').set(authA);
+      const ingreso = l.body[0].id as string;
+      await http()
+        .post(`/boletas/${id}/gastos`)
+        .set(authA)
+        .send({ descripcion: 'Agua', monto: '2.00', categoriaId: ingreso })
+        .expect(400);
     });
   });
 });

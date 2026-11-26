@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { TransaccionRespuesta } from '../../transacciones/infrastructure/respuestas.js';
 
 export class ProductoLeidoRespuesta {
   @ApiProperty({ type: String }) descripcion!: string;
@@ -49,4 +50,29 @@ export class BoletaRespuesta {
   @ApiProperty({ type: String, nullable: true, example: '23.40' })
   totalImpreso!: string | null;
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
+}
+
+export class DetalleBoletaRespuesta extends BoletaRespuesta {
+  @ApiProperty({
+    type: () => [TransaccionRespuesta],
+    description: 'Gastos enlazados a la boleta, por orden de creación',
+  })
+  gastos!: TransaccionRespuesta[];
+}
+
+export class ResumenBoletaRespuesta extends BoletaRespuesta {
+  @ApiProperty({ type: Number, description: 'Cantidad de gastos enlazados' })
+  gastos!: number;
+  @ApiProperty({
+    type: String,
+    example: '8.40',
+    description: 'Suma de los gastos, 2 decimales',
+  })
+  sumaGastos!: string;
+}
+
+export class ListaBoletasRespuesta {
+  @ApiProperty({ type: () => [ResumenBoletaRespuesta] })
+  items!: ResumenBoletaRespuesta[];
+  @ApiProperty({ type: Number }) total!: number;
 }
