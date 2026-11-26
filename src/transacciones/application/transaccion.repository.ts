@@ -16,6 +16,8 @@ export interface FiltrosTransaccion {
   tipo?: TipoMovimiento;
   /** `'sin'` = sin categoría. */
   categoriaId?: string;
+  /** 'fecha' (por defecto): fecha desc. 'reciente': createdAt desc. */
+  orden?: 'fecha' | 'fecha_asc' | 'reciente';
   pagina: number;
   tamano: number;
 }
@@ -39,7 +41,7 @@ export interface TransaccionRepository {
   ): Promise<Transaccion | null>;
   /** false si no existe para ese usuario. */
   eliminar(userId: string, id: string): Promise<boolean>;
-  /** Orden: fecha desc, createdAt desc. */
+  /** Orden según filtros.orden (por defecto fecha desc, createdAt desc). */
   listar(
     userId: string,
     filtros: FiltrosTransaccion,

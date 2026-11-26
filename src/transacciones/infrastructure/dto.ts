@@ -68,6 +68,9 @@ export class EditarTransaccionDto {
   categoriaId?: string | null;
 }
 
+export const ORDENES_TRANSACCION = ['fecha', 'fecha_asc', 'reciente'] as const;
+export type OrdenTransaccion = (typeof ORDENES_TRANSACCION)[number];
+
 export class ListarTransaccionesQuery {
   @ApiPropertyOptional({ type: String, example: '2026-11-01' })
   @IsOptional()
@@ -89,6 +92,15 @@ export class ListarTransaccionesQuery {
   @ValidateIf((o: ListarTransaccionesQuery) => o.categoriaId !== 'sin')
   @IsUUID()
   categoriaId?: string;
+  @ApiPropertyOptional({
+    enum: ORDENES_TRANSACCION,
+    default: 'fecha',
+    description:
+      'fecha: por fecha del movimiento, la más reciente primero. fecha_asc: por fecha, la más antigua primero. reciente: por momento de registro (el último primero).',
+  })
+  @IsOptional()
+  @IsIn(ORDENES_TRANSACCION)
+  orden?: OrdenTransaccion;
   @ApiPropertyOptional({ type: Number, minimum: 1, default: 1 })
   @IsOptional()
   @Type(() => Number)

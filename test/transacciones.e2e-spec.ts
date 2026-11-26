@@ -355,4 +355,68 @@ describe('transacciones', () => {
       r.body.items.map((t: { descripcion: string }) => t.descripcion),
     ).toEqual(['g1']);
   });
+  describe('orden', () => {
+    const ids = (r: { body: { items: { descripcion: string }[] } }) =>
+      r.body.items.map((x) => x.descripcion);
+    async function tres() {
+      await crear(authA, gasto({ descripcion: 'A', fecha: '2026-11-10' }));
+      await crear(authA, gasto({ descripcion: 'B', fecha: '2026-11-20' }));
+      await crear(authA, gasto({ descripcion: 'C', fecha: '2026-11-05' }));
+    }
+
+    it('sin orden y con orden=fecha: B, A, C', async () => {
+      await tres();
+      const sin = await http().get('/transacciones').set(authA).expect(200);
+      expect(ids(sin)).toEqual(['B', 'A', 'C']);
+      const con = await http()
+        .get('/transacciones?orden=fecha')
+        .set(authA)
+        .expect(200);
+      expect(ids(con)).toEqual(['B', 'A', 'C']);
+    });
+
+    it('orden=reciente: C, B, A', async () => {
+      await tres();
+      const res = await http()
+        .get('/transacciones?orden=reciente')
+        .set(authA)
+        .expect(200);
+      expect(ids(res)).toEqual(['C', 'B', 'A']);
+    });
+
+    it('orden=fecha_asc: C, A, B (la más antigua primero)', async () => {
+      await tres();
+      const res = await http()
+        .get('/transacciones?orden=fecha_asc')
+        .set(authA)
+        .expect(200);
+      expect(ids(res)).toEqual(['C', 'A', 'B']);
+    });
+
+    it('orden inválido -> 400', async () => {
+      await http().get('/transacciones?orden=x').set(authA).expect(400);
+    });
+
+    it('reciente respeta filtros y paginación', async () => {
+      await tres();
+      await crear(
+        authA,
+        gasto({ tipo: 'ingreso', descripcion: 'D', fecha: '2026-11-15' }),
+      );
+      const filtrado = await http()
+        .get(
+          '/transacciones?orden=reciente&tipo=gasto&desde=2026-11-06&hasta=2026-11-30',
+        )
+        .set(authA)
+        .expect(200);
+      expect(ids(filtrado)).toEqual(['B', 'A']);
+      expect(filtrado.body.total).toBe(2);
+      const pag = await http()
+        .get('/transacciones?orden=reciente&tipo=gasto&tamano=2&pagina=2')
+        .set(authA)
+        .expect(200);
+      expect(ids(pag)).toEqual(['A']);
+      expect(pag.body.total).toBe(3);
+    });
+  });
 });

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   and,
+  asc,
   count,
   desc,
   eq,
@@ -135,9 +136,19 @@ export class DrizzleTransaccionRepository implements TransaccionRepository {
     );
     const filas = await this.seleccionar(where)
       .orderBy(
-        desc(transactions.fecha),
-        desc(transactions.createdAt),
-        desc(transactions.id),
+        ...(f.orden === 'reciente'
+          ? [desc(transactions.createdAt), desc(transactions.id)]
+          : f.orden === 'fecha_asc'
+            ? [
+                asc(transactions.fecha),
+                asc(transactions.createdAt),
+                asc(transactions.id),
+              ]
+            : [
+                desc(transactions.fecha),
+                desc(transactions.createdAt),
+                desc(transactions.id),
+              ]),
       )
       .limit(f.tamano)
       .offset((f.pagina - 1) * f.tamano);
