@@ -90,6 +90,27 @@ export class DrizzleBoletaRepository implements BoletaRepository {
     return fila?.rutaImagen ?? null;
   }
 
+  async eliminarConGastos(userId: string, id: string): Promise<string | null> {
+    return this.db.transaction(async (tx) => {
+      const [boleta] = await tx
+        .select({ id: receipts.id })
+        .from(receipts)
+        .where(and(eq(receipts.id, id), eq(receipts.userId, userId)))
+        .for('update');
+      if (!boleta) return null;
+      await tx
+        .delete(transactions)
+        .where(
+          and(eq(transactions.receiptId, id), eq(transactions.userId, userId)),
+        );
+      const [fila] = await tx
+        .delete(receipts)
+        .where(and(eq(receipts.id, id), eq(receipts.userId, userId)))
+        .returning({ rutaImagen: receipts.rutaImagen });
+      return fila?.rutaImagen ?? null;
+    });
+  }
+
   async listar(
     userId: string,
     pagina: number,

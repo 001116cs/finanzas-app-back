@@ -47,6 +47,8 @@ export interface BoletaRepository {
   obtener(userId: string, id: string): Promise<Boleta | null>;
   /** Borra el receipt (los gastos quedan con receipt_id null por la FK). Devuelve la ruta de la imagen o null si no existe/es ajena. */
   eliminar(userId: string, id: string): Promise<string | null>;
+  /** Una transacción: bloquea la boleta del usuario (FOR UPDATE; si no existe/es ajena devuelve null sin borrar nada), borra sus gastos y la boleta. Devuelve la ruta de la imagen. */
+  eliminarConGastos(userId: string, id: string): Promise<string | null>;
   /** Orden fecha desc, created_at desc, id. Cuenta y suma (numeric) los gastos enlazados. */
   listar(
     userId: string,

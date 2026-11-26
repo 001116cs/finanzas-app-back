@@ -1607,11 +1607,25 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "gastos",
+            "required": false,
+            "in": "query",
+            "description": "Qué hacer con los gastos creados desde la boleta: 'conservar' (por defecto) los deja sin enlace; 'eliminar' los borra junto con la boleta",
+            "schema": {
+              "default": "conservar",
+              "type": "string",
+              "enum": [
+                "conservar",
+                "eliminar"
+              ]
+            }
           }
         ],
         "responses": {
           "204": {
-            "description": "Boleta e imagen eliminadas; los gastos creados se conservan sin enlace a la boleta"
+            "description": "Boleta e imagen eliminadas; con gastos=conservar (por defecto) los gastos creados se conservan sin enlace a la boleta, con gastos=eliminar también se borran sus gastos"
           },
           "401": {
             "description": "",

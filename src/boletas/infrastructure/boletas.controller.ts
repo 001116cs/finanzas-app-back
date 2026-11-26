@@ -57,6 +57,7 @@ import {
   EditarBoletaDto,
   GastoBoletaDto,
   GuardarBoletaDto,
+  EliminarBoletaQuery,
   ListarBoletasQuery,
 } from './dto.js';
 import {
@@ -343,7 +344,7 @@ export class BoletasController {
 
   @ApiNoContentResponse({
     description:
-      'Boleta e imagen eliminadas; los gastos creados se conservan sin enlace a la boleta',
+      'Boleta e imagen eliminadas; con gastos=conservar (por defecto) los gastos creados se conservan sin enlace a la boleta, con gastos=eliminar también se borran sus gastos',
   })
   @ApiNotFoundResponse({ type: ErrorRespuesta })
   @Delete(':id')
@@ -351,7 +352,8 @@ export class BoletasController {
   async delete(
     @UsuarioActual() userId: string,
     @Param('id', ParseUUIDPipe) id: string,
+    @Query() q: EliminarBoletaQuery,
   ): Promise<void> {
-    await this.eliminar.ejecutar(userId, id);
+    await this.eliminar.ejecutar(userId, id, q.gastos ?? 'conservar');
   }
 }

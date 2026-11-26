@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -101,4 +102,16 @@ export class ListarBoletasQuery {
   @Min(1)
   @Max(50)
   tamano: number = 12;
+}
+
+export class EliminarBoletaQuery {
+  @ApiPropertyOptional({
+    enum: ['conservar', 'eliminar'],
+    default: 'conservar',
+    description:
+      "Qué hacer con los gastos creados desde la boleta: 'conservar' (por defecto) los deja sin enlace; 'eliminar' los borra junto con la boleta",
+  })
+  @IsOptional()
+  @IsIn(['conservar', 'eliminar'])
+  gastos?: 'conservar' | 'eliminar';
 }

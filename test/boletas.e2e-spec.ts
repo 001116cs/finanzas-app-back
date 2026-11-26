@@ -307,6 +307,58 @@ describe('boletas', () => {
     });
   });
 
+  describe('eliminar con gastos', () => {
+    it('?gastos=eliminar borra los gastos de la boleta, no los de otras ni los manuales', async () => {
+      const a1 = (await guardar(authA).expect(201)).body.id as string;
+      const a2 = (
+        await guardar(
+          authA,
+          datos({ productos: [{ descripcion: 'Arroz', monto: '5.00', categoriaId: null }] }),
+        ).expect(201)
+      ).body.id as string;
+      await http()
+        .post('/transacciones')
+        .set(authA)
+        .send({ tipo: 'gasto', monto: '1.00', fecha: '2026-11-20', descripcion: 'Manual', categoriaId: null })
+        .expect(201);
+      const antes = await ficheros();
+      await http().delete(`/boletas/${a1}?gastos=eliminar`).set(authA).expect(204);
+      const lista = await http().get('/transacciones').set(authA).expect(200);
+      expect(lista.body.total).toBe(2);
+      const descs = lista.body.items.map((t: { descripcion: string }) => t.descripcion).sort();
+      expect(descs).toEqual(['Arroz', 'Manual']);
+      const arroz = lista.body.items.find((t: { descripcion: string }) => t.descripcion === 'Arroz');
+      expect(arroz.boletaId).toBe(a2);
+      expect(await ficheros()).toBe(antes - 2);
+      await http().delete(`/boletas/${a1}?gastos=eliminar`).set(authA).expect(404);
+    });
+
+    it('sin parámetro conserva los gastos con boletaId null', async () => {
+      const { id } = (await guardar(authA).expect(201)).body;
+      await http().delete(`/boletas/${id}`).set(authA).expect(204);
+      const lista = await http().get('/transacciones').set(authA).expect(200);
+      expect(lista.body.total).toBe(2);
+      for (const t of lista.body.items) expect(t.boletaId).toBeNull();
+    });
+
+    it('otro usuario con ?gastos=eliminar -> 404 y todo sigue existiendo', async () => {
+      const { id } = (await guardar(authA).expect(201)).body;
+      const antes = await ficheros();
+      await http().delete(`/boletas/${id}?gastos=eliminar`).set(authB).expect(404);
+      await http().get(`/boletas/${id}`).set(authA).expect(200);
+      const lista = await http().get('/transacciones').set(authA).expect(200);
+      expect(lista.body.total).toBe(2);
+      for (const t of lista.body.items) expect(t.boletaId).toBe(id);
+      expect(await ficheros()).toBe(antes);
+    });
+
+    it('?gastos=x -> 400', async () => {
+      const { id } = (await guardar(authA).expect(201)).body;
+      await http().delete(`/boletas/${id}?gastos=x`).set(authA).expect(400);
+      await http().get(`/boletas/${id}`).set(authA).expect(200);
+    });
+  });
+
   describe('galería editable', () => {
     const boleta = async (
       auth: Record<string, string>,
