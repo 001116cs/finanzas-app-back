@@ -23,6 +23,13 @@ export class TransaccionRespuesta {
     string | null;
   @ApiProperty({ type: String, enum: ['manual', 'excel', 'boleta'] })
   origen!: string;
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'Boleta de la que proviene el gasto; null si no aplica',
+  })
+  boletaId!: string | null;
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
 }
 

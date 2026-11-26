@@ -14,6 +14,7 @@ export interface Transaccion {
   categoriaId: string | null;
   categoriaNombre: string | null;
   origen: OrigenMovimiento;
+  boletaId?: string | null;
   createdAt: Date;
 }
 

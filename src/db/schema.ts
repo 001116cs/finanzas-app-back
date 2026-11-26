@@ -7,6 +7,7 @@ import {
   numeric,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -64,6 +65,22 @@ export const imports = pgTable(
   (t) => [index('imports_user_idx').on(t.userId)],
 );
 
+export const receipts = pgTable(
+  'receipts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull(),
+    rutaImagen: text('ruta_imagen').notNull(),
+    comercio: text('comercio').notNull(),
+    fecha: date('fecha').notNull(),
+    totalImpreso: numeric('total_impreso', { precision: 12, scale: 2 }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index('receipts_user_idx').on(t.userId)],
+);
+
 export const transactions = pgTable(
   'transactions',
   {
@@ -80,6 +97,9 @@ export const transactions = pgTable(
     importId: uuid('import_id').references(() => imports.id, {
       onDelete: 'cascade',
     }),
+    receiptId: uuid('receipt_id').references(() => receipts.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -88,5 +108,25 @@ export const transactions = pgTable(
     check('transactions_monto_positivo', sql`${t.monto} > 0`),
     index('transactions_user_fecha_idx').on(t.userId, t.fecha),
     index('transactions_import_idx').on(t.importId),
+    index('transactions_receipt_idx').on(t.receiptId),
   ],
 );
+
+export const aiUsage = pgTable(
+  'ai_usage',
+  {
+    userId: uuid('user_id').notNull(),
+    mes: text('mes').notNull(), // YYYY-MM
+    boletasUsadas: integer('boletas_usadas').notNull().default(0),
+    preguntasUsadas: integer('preguntas_usadas').notNull().default(0),
+    intentosFallidos: integer('intentos_fallidos').notNull().default(0),
+  },
+  (t) => [primaryKey({ name: 'ai_usage_pk', columns: [t.userId, t.mes] })],
+);
+
+export const aiGlobalUsage = pgTable('ai_global_usage', {
+  mes: text('mes').primaryKey(),
+  costoEstimadoUsd: numeric('costo_estimado_usd', { precision: 12, scale: 6 })
+    .notNull()
+    .default('0'),
+});

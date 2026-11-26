@@ -73,6 +73,7 @@ describe('transacciones', () => {
       categoriaId: cat,
       categoriaNombre: 'Comida',
       origen: 'manual',
+      boletaId: null,
       createdAt: expect.any(String),
     });
   });

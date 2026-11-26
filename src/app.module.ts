@@ -12,10 +12,13 @@ import { PerfilModule } from './perfil/perfil.module.js';
 import { CategoriasModule } from './categorias/categorias.module.js';
 import { TransaccionesModule } from './transacciones/transacciones.module.js';
 import { ImportacionesModule } from './importaciones/importaciones.module.js';
+import { AlmacenamientoModule } from './compartido/almacenamiento/almacenamiento.module.js';
+import { BoletasModule } from './boletas/boletas.module.js';
+import { UsoIaModule } from './uso-ia/uso-ia.module.js';
 import { HealthController } from './health/health.controller.js';
 
 @Module({
-  imports: [DbModule, PerfilModule, CategoriasModule, TransaccionesModule, ImportacionesModule],
+  imports: [DbModule, PerfilModule, CategoriasModule, TransaccionesModule, ImportacionesModule, UsoIaModule, AlmacenamientoModule, BoletasModule],
   controllers: [HealthController],
   providers: [
     {

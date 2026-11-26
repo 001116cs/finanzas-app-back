@@ -1,3 +1,5 @@
+import os from 'node:os';
+import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -14,6 +16,9 @@ export default defineConfig({
         'postgres://finanzas:finanzas@localhost:5432/finanzas_test',
       SUPABASE_URL: process.env.SUPABASE_URL ?? 'https://test.supabase.co',
       FRONT_URL: process.env.FRONT_URL ?? 'http://localhost:3000',
+      AI_PROVIDER: 'falso',
+      STORAGE_DRIVER: 'disco',
+      STORAGE_LOCAL_DIR: path.join(os.tmpdir(), 'finanzas-e2e-almacen'),
     },
   },
 });

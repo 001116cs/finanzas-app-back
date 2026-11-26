@@ -32,6 +32,7 @@ const columnas = {
   categoriaId: transactions.categoryId,
   categoriaNombre: categories.nombre,
   origen: transactions.origen,
+  boletaId: transactions.receiptId,
   createdAt: transactions.createdAt,
 };
 
@@ -44,6 +45,7 @@ type Fila = {
   categoriaId: string | null;
   categoriaNombre: string | null;
   origen: 'manual' | 'excel' | 'boleta';
+  boletaId: string | null;
   createdAt: Date;
 };
 

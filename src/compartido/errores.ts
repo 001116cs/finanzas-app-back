@@ -52,3 +52,21 @@ export class PerfilRequeridoError extends ConflictoError {
     super('PERFIL_REQUERIDO', 'Debes completar tu perfil');
   }
 }
+
+export class IaNoDisponibleError extends Error {
+  readonly codigo = 'IA_NO_DISPONIBLE';
+  constructor(
+    mensaje = 'El servicio de lectura de boletas no está disponible. Inténtalo más tarde.',
+  ) {
+    super(mensaje);
+  }
+}
+
+export class BoletaIlegibleError extends Error {
+  readonly codigo = 'BOLETA_ILEGIBLE';
+  constructor(
+    mensaje = 'No pudimos leer la boleta. Prueba con una foto más nítida y bien iluminada.',
+  ) {
+    super(mensaje);
+  }
+}

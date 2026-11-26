@@ -3,11 +3,14 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
+  PayloadTooLargeException,
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
+  BoletaIlegibleError,
   ConflictoError,
+  IaNoDisponibleError,
   NoAutenticadoError,
   NoEncontradoError,
   ServicioNoDisponibleError,
@@ -38,6 +41,24 @@ export class FiltroErrores implements ExceptionFilter {
       return {
         status: 503,
         cuerpo: { codigo: error.codigo, mensaje: error.message },
+      };
+    if (error instanceof BoletaIlegibleError)
+      return {
+        status: 422,
+        cuerpo: { codigo: error.codigo, mensaje: error.message },
+      };
+    if (error instanceof IaNoDisponibleError)
+      return {
+        status: 503,
+        cuerpo: { codigo: error.codigo, mensaje: error.message },
+      };
+    if (error instanceof PayloadTooLargeException)
+      return {
+        status: 400,
+        cuerpo: {
+          codigo: 'IMAGEN_INVALIDA',
+          mensaje: 'La imagen supera los 5 MB',
+        },
       };
     if (error instanceof NoEncontradoError)
       return {

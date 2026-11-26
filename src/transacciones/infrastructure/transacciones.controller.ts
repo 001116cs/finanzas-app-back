@@ -50,6 +50,7 @@ function presentar(t: Transaccion) {
     categoriaId: t.categoriaId,
     categoriaNombre: t.categoriaNombre,
     origen: t.origen,
+    boletaId: t.boletaId ?? null,
     createdAt: t.createdAt.toISOString(),
   };
 }

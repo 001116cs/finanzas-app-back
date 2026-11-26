@@ -1150,6 +1150,426 @@
           "importaciones"
         ]
       }
+    },
+    "/uso-ia": {
+      "get": {
+        "operationId": "UsoIaController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Uso de IA del usuario en el mes actual y sus límites",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsoIaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "uso-ia"
+        ]
+      }
+    },
+    "/boletas/escanear": {
+      "post": {
+        "operationId": "BoletasController_postEscanear",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "imagen"
+                ],
+                "properties": {
+                  "imagen": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG, PNG o WebP, máx. 5 MB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lectura de la boleta; no se guarda nada (sólo se cuenta el uso)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LecturaBoletaRespuesta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "IMAGEN_INVALIDA",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO (en escanear también LIMITE_BOLETAS, LIMITE_INTENTOS_FALLIDOS o LIMITE_GLOBAL_IA)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "BOLETA_ILEGIBLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "IA_NO_DISPONIBLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "boletas"
+        ]
+      }
+    },
+    "/boletas": {
+      "post": {
+        "operationId": "BoletasController_post",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "imagen",
+                  "datos"
+                ],
+                "properties": {
+                  "imagen": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG, PNG o WebP, máx. 5 MB"
+                  },
+                  "datos": {
+                    "type": "string",
+                    "description": "JSON de GuardarBoletaDto: { comercio, fecha, totalImpreso, productos: [{ descripcion, monto, categoriaId }] }"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardarBoletaRespuesta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "IMAGEN_INVALIDA, VALIDACION, COMERCIO_INVALIDO, PRODUCTOS_INVALIDOS, FECHA_INVALIDA o error de un producto (incluye `fila`); no se guarda nada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO (en escanear también LIMITE_BOLETAS, LIMITE_INTENTOS_FALLIDOS o LIMITE_GLOBAL_IA)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "boletas"
+        ]
+      }
+    },
+    "/boletas/{id}": {
+      "get": {
+        "operationId": "BoletasController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoletaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO (en escanear también LIMITE_BOLETAS, LIMITE_INTENTOS_FALLIDOS o LIMITE_GLOBAL_IA)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "boletas"
+        ]
+      },
+      "delete": {
+        "operationId": "BoletasController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Boleta e imagen eliminadas; los gastos creados se conservan sin enlace a la boleta"
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO (en escanear también LIMITE_BOLETAS, LIMITE_INTENTOS_FALLIDOS o LIMITE_GLOBAL_IA)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "boletas"
+        ]
+      }
+    },
+    "/boletas/{id}/imagen": {
+      "get": {
+        "operationId": "BoletasController_getImagen",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bytes de la imagen original de la boleta",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERFIL_REQUERIDO (en escanear también LIMITE_BOLETAS, LIMITE_INTENTOS_FALLIDOS o LIMITE_GLOBAL_IA)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "boletas"
+        ]
+      }
     }
   },
   "info": {
@@ -1385,6 +1805,12 @@
               "boleta"
             ]
           },
+          "boletaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Boleta de la que proviene el gasto; null si no aplica"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -1399,6 +1825,7 @@
           "categoriaId",
           "categoriaNombre",
           "origen",
+          "boletaId",
           "createdAt"
         ]
       },
@@ -1702,6 +2129,170 @@
           "id",
           "nombreArchivo",
           "filasImportadas",
+          "createdAt"
+        ]
+      },
+      "BoletasUsoRespuesta": {
+        "type": "object",
+        "properties": {
+          "usadas": {
+            "type": "number",
+            "description": "Boletas procesadas este mes"
+          },
+          "limite": {
+            "type": "number",
+            "description": "Máximo de boletas por mes"
+          }
+        },
+        "required": [
+          "usadas",
+          "limite"
+        ]
+      },
+      "IntentosFallidosUsoRespuesta": {
+        "type": "object",
+        "properties": {
+          "usados": {
+            "type": "number",
+            "description": "Intentos fallidos este mes"
+          },
+          "limite": {
+            "type": "number",
+            "description": "Máximo de intentos fallidos por mes"
+          }
+        },
+        "required": [
+          "usados",
+          "limite"
+        ]
+      },
+      "UsoIaRespuesta": {
+        "type": "object",
+        "properties": {
+          "mes": {
+            "type": "string",
+            "example": "2026-11",
+            "description": "Mes (YYYY-MM) en la zona del usuario"
+          },
+          "boletas": {
+            "$ref": "#/components/schemas/BoletasUsoRespuesta"
+          },
+          "intentosFallidos": {
+            "$ref": "#/components/schemas/IntentosFallidosUsoRespuesta"
+          },
+          "globalAgotado": {
+            "type": "boolean",
+            "description": "true si se agotó el tope global mensual de IA"
+          }
+        },
+        "required": [
+          "mes",
+          "boletas",
+          "intentosFallidos",
+          "globalAgotado"
+        ]
+      },
+      "ProductoLeidoRespuesta": {
+        "type": "object",
+        "properties": {
+          "descripcion": {
+            "type": "string"
+          },
+          "monto": {
+            "type": "string",
+            "example": "12.50",
+            "description": "Con 2 decimales; puede ser negativo (descuentos)"
+          },
+          "categoriaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Categoría de gasto del usuario sugerida; null si no hay"
+          }
+        },
+        "required": [
+          "descripcion",
+          "monto",
+          "categoriaId"
+        ]
+      },
+      "LecturaBoletaRespuesta": {
+        "type": "object",
+        "properties": {
+          "comercio": {
+            "type": "string"
+          },
+          "fecha": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-19",
+            "description": "YYYY-MM-DD; null si no se pudo leer"
+          },
+          "totalImpreso": {
+            "type": "string",
+            "nullable": true,
+            "example": "23.40"
+          },
+          "productos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductoLeidoRespuesta"
+            }
+          }
+        },
+        "required": [
+          "comercio",
+          "fecha",
+          "totalImpreso",
+          "productos"
+        ]
+      },
+      "GuardarBoletaRespuesta": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "gastosCreados": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "gastosCreados"
+        ]
+      },
+      "BoletaRespuesta": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "comercio": {
+            "type": "string"
+          },
+          "fecha": {
+            "type": "string",
+            "example": "2026-11-19",
+            "description": "YYYY-MM-DD"
+          },
+          "totalImpreso": {
+            "type": "string",
+            "nullable": true,
+            "example": "23.40"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "comercio",
+          "fecha",
+          "totalImpreso",
           "createdAt"
         ]
       }

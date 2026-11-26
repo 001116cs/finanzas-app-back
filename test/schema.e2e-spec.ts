@@ -87,4 +87,56 @@ describe('schema', () => {
     const filas = await db.select().from(schema.transactions);
     expect(filas.map((f) => f.descripcion)).toEqual(['manual']);
   });
+
+  it('borrar un receipt deja receipt_id en null y conserva sus transacciones', async () => {
+    const [rec] = await db
+      .insert(schema.receipts)
+      .values({
+        userId,
+        rutaImagen: 'u/b.jpg',
+        comercio: 'Tienda',
+        fecha: '2026-11-01',
+      })
+      .returning();
+    const [tx] = await db
+      .insert(schema.transactions)
+      .values({
+        userId,
+        tipo: 'gasto',
+        monto: '10.00',
+        fecha: '2026-11-01',
+        descripcion: 'Compra',
+        origen: 'boleta',
+        receiptId: rec.id,
+      })
+      .returning();
+    expect(tx.receiptId).toBe(rec.id);
+    await db.delete(schema.receipts);
+    const filas = await db.select().from(schema.transactions);
+    expect(filas).toHaveLength(1);
+    expect(filas[0].id).toBe(tx.id);
+    expect(filas[0].receiptId).toBeNull();
+  });
+
+  it('rechaza dos ai_usage con el mismo (user_id, mes)', async () => {
+    await db.insert(schema.aiUsage).values({ userId, mes: '2026-11' });
+    const error = await db
+      .insert(schema.aiUsage)
+      .values({ userId, mes: '2026-11' })
+      .then(
+        () => undefined,
+        (e: { cause?: { code?: string } }) => e,
+      );
+    expect(error?.cause?.code).toBe('23505');
+  });
+
+  it('ai_usage inicia sus contadores en 0', async () => {
+    const [fila] = await db
+      .insert(schema.aiUsage)
+      .values({ userId, mes: '2026-11' })
+      .returning();
+    expect(fila.boletasUsadas).toBe(0);
+    expect(fila.preguntasUsadas).toBe(0);
+    expect(fila.intentosFallidos).toBe(0);
+  });
 });
